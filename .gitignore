@@ -1,0 +1,21 @@
+# Compiled JavaScript files
+/dist
+*.js
+*.jsx
+*.js.map
+*.tsbuildinfo
+
+# Node modules
+/node_modules
+
+# Environment variables
+.env
+
+# Editor folders and files
+.vscode/
+.idea/
+*.swp
+*.suo
+*.user
+*.userosscache
+*.sln.do
