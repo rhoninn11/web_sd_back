@@ -23,7 +23,7 @@ export class PasswordBank {
             if (item.password == pass, item.inUse == false) {
                 item.inUse = true;
                 result = true;
-                cl.auth = 1;
+                cl.auth = idx;
             }
         });
 
