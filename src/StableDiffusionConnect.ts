@@ -1,68 +1,40 @@
 import net from 'net';
+import { v4 as uuidv4 } from 'uuid';
 
-interface connectMsg {
-    connect: number;
-}
+import { connectMsg, disconnectMsg, txt2img } from './types_sd';
+import { ComUtils } from './ComUtils';
 
-interface disconnectMsg {
-    disconnect: number;
-}
-
-interface txt2img_config {
-    prompt: string;
-    prompt_negative: string;
-    seed: number;
-    samples: number;
-}
-
-interface metadata {
-    id: string;
-}
-
-interface txt2img {
-    config: txt2img_config
-    metadata: metadata;
-}
-
-interface txt2img_request {
-    txt2img: txt2img;
-}
-
-export class SDClient {
-    private static instance: SDClient;
-    private client: net.Socket | undefined = undefined;
-
-    public static getInstance(): SDClient {
-        if (!SDClient.instance) {
-            SDClient.instance = new SDClient();
+export const test_send_txt2img = (sd: SDClient) => {
+    let sub_command: txt2img = {
+        txt2img: {
+            config: {
+                prompt: "Sunny day over the sea, pastel painting",
+                prompt_negative: "boring skyscape",
+                seed: 0,
+                samples: 1,
+            },
+            metadata: { id: uuidv4() }
         }
-        return SDClient.instance;
     }
 
-    private _send_txt2img(sock: net.Socket) {
-        let command: txt2img_request = {
-            txt2img: {
-                config: {
-                    prompt: "Sunny day over the sea, pastel painting",
-                    prompt_negative: "boring skyscape",
-                    seed: 0,
-                    samples: 1,
-                },
-                metadata: { id: "osiedle xd" }
-            }
-        }
-
-        setTimeout(() => {
-            console.log('Sending command');
-            this.send(sock, command);
-        }, 1000);
+    let command = { 
+        type: "txt2img",
+        data: JSON.stringify(sub_command)
     }
 
+    setTimeout(() => {
+        console.log('Sending command');
+        sd.send(command);
+    }, 1000);
+}
+
+
+class SegmentationProcessor {
     private is_reciveing: boolean = false;
     private reciveing_buffer: Buffer = Buffer.alloc(0);
     private reciveing_len: number = 0;
 
-    private data_processing(data: Buffer) {
+    public process(data: Buffer) {
         if (this.is_reciveing) {
             this.reciveing_buffer = Buffer.concat([this.reciveing_buffer, data]);
         }
@@ -72,16 +44,82 @@ export class SDClient {
             this.reciveing_buffer = Buffer.alloc(0);
             this.reciveing_buffer = Buffer.concat([this.reciveing_buffer, data]);
             this.reciveing_len = data.readUInt32LE(0) + 4;
-
         }
 
         if (this.reciveing_buffer.byteLength === this.reciveing_len) {
-            console.log(`++++ no i tu powinno się coz zadziac? ++++`);
-
-            let u_data = this.unwrap_data(this.reciveing_buffer)
-            console.log(`Received data: ${u_data}`);
-            let obj = this.bytes2json2obj(u_data);
             this.is_reciveing = false;
+
+            let u_data = ComUtils.unwrap_data(this.reciveing_buffer)
+            let obj = ComUtils.bytes2json2obj(u_data);
+            return obj;
+        }
+
+        return undefined
+    }
+}
+
+export class SDClient {
+    private static instance: SDClient;
+    private client: net.Socket | undefined = undefined;
+    private idIndex: Map<string, (data: any) => void> = new Map<string, (data: any) => void>();
+    private seg_proc: SegmentationProcessor = new SegmentationProcessor();
+
+    public static getInstance(): SDClient {
+        if (!SDClient.instance) {
+            SDClient.instance = new SDClient();
+        }
+        return SDClient.instance;
+    }
+
+    public bind_return_func(id: string, return_func: (data: any) => void) {
+        this.idIndex.set(id, return_func);
+    }
+
+    public send_txt2img(txt2img: txt2img, return_func: (data: any) => void) {
+        console.log('Sending txt2img');
+        if (this.client){
+            console.log('Sending txt2img ...');
+
+            let command = { 
+                type: "txt2img",
+                data: JSON.stringify(txt2img)
+            }
+
+            this._send(this.client, command);
+            this.bind_return_func(txt2img.txt2img.metadata.id, return_func);
+        }
+    }
+
+    private redistribute_object(object: any){
+        let keys = Object.keys(object);
+        if (keys.includes('type') ) {
+            let type = object.type;
+            let has_proper_type = ["txt2img", "progress"].includes(type);
+            if (has_proper_type) {
+                let encoded = object.data;
+                let decoded = JSON.parse(encoded);
+                let meta_id =  decoded[type].metadata.id;
+                console.log(`type: ${type}, id: ${meta_id}`);
+
+                // get return_func
+                // check if it exists
+                if(this.idIndex.has(meta_id)){
+
+                    let return_func = this.idIndex.get(meta_id);
+                    console.log(`and has return fn in index ${return_func}}`);
+                    if(return_func)
+                        return_func(object)
+                }
+
+            }
+        }
+    }
+
+    private data_processing(data: Buffer) {
+        let compleate_object = this.seg_proc.process(data);
+        if (compleate_object){
+            console.log('Got compleate object');
+            this.redistribute_object(compleate_object);
         }
     }
 
@@ -93,8 +131,8 @@ export class SDClient {
             console.log(`Connected to ${host}:${port}`);
             if (this.client) {
                 let msg: connectMsg = { connect: 1 };
-                this.send(this.client, msg);
-                this._send_txt2img(this.client)
+                this._send(this.client, msg);
+                // this._send_txt2img(this.client)
             }
         });
 
@@ -107,68 +145,21 @@ export class SDClient {
         });
     }
 
-    public obj2json2bytes(obj: any, verbose: boolean = false): Buffer {
-        let json_text: string = "";
-        // TODO - handle possible errors
-        json_text = JSON.stringify(obj);
-        let data_bytes = Buffer.from(json_text, 'utf8');
-        return data_bytes;
-    }
-
-    public bytes2json2obj(bytes: Buffer): any {
-        let json = bytes.toString('utf8');
-        let j_len = json.length;
-        console.log(`json len: ${j_len}`);
-        let last_char = json[j_len - 1]
-        if (last_char == '\0') {
-            json = json.slice(0, j_len - 1);
-        }
-        let obj = JSON.parse(json);
-        return obj;
-    }
-
-    public wrap_data(bytes: Buffer): Buffer {
-        let b_num = bytes.byteLength
-
-        let last_byte = bytes[b_num - 1];
-        if (last_byte != 0) {
-            let new_bytes = Buffer.alloc(b_num + 1);
-            bytes.copy(new_bytes, 0, 0, b_num);
-            new_bytes[b_num] = 0;
-            b_num += 1;
-            bytes = new_bytes;
-        }
-
-        let len_bytes = Buffer.alloc(4);
-        len_bytes.writeUInt32LE(b_num, 0);
-
-        let tcp_bytes = Buffer.concat([len_bytes, bytes]);
-        return tcp_bytes;
-    }
-
-    public unwrap_data(bytes: Buffer): Buffer {
-
-        let string_bytes = bytes.subarray(4, bytes.byteLength);
-        return string_bytes
-    }
-
-
-    public send(sock: net.Socket, obj: any) {
-        let msg_bytes = this.obj2json2bytes(obj);
-        let wrapped_msg = this.wrap_data(msg_bytes);
+    private _send(sock: net.Socket, obj: any) {
+        let msg_bytes = ComUtils.obj2json2bytes(obj);
+        let wrapped_msg = ComUtils.wrap_data(msg_bytes);
         sock.write(wrapped_msg);
+    }
+
+    public send(obj: any) {
+        if (this.client)
+            this._send(this.client, obj);
     }
 
     public close(): void {
         if (this.client) {
             let msg: disconnectMsg = { disconnect: 0 };
-            this.send(this.client, msg);
-            // this.client.end(() => {
-            //     console.log('Client ended connection (waiting for all data to be sent)');
-            //     if (this.client)
-            //         this.client.destroy(); // Ensure that the socket is fully closed
-            //     console.log('Client socket completely closed');
-            //   });
+            this._send(this.client, msg);
         }
         console.log('Connection closed');
     }

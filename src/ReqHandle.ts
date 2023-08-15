@@ -1,21 +1,23 @@
 import WebSocket from 'ws';
+import { v4 as uuidv4 } from 'uuid';
+
+
 import { Client, serverRequest } from './types';
 import { PasswordBank } from './PasswordBank';
+import { txt2img } from './types_sd';
+import { SDClient } from './StableDiffusionConnect';
 
 const wss = new WebSocket.Server({ port: 8765 });
-
-interface imageGenData {
-	seed: number;
-	prompt: string;
-	negative_prompt: string;
-	img64: string; 
-}
 
 interface authData {
 	password: string;
 	auth: boolean;
 }
 
+interface progressData{
+    progress: number;
+    id: string;
+}
 
 interface requestHandler {
     handle_request: (cl: Client, req: serverRequest) => void;
@@ -53,12 +55,29 @@ export class authHandler extends dataWrapper<authData> implements requestHandler
     }
 }
 
-class imgGenHandler extends dataWrapper<imageGenData> implements requestHandler {
-    handle_request(cl: Client, req: serverRequest) {
-        let img_data = this.unpack_data(req.data);
-        console.log(img_data);
-        req.data = this.pack_data(img_data);
-        send_object(cl, req);
+
+
+export class txt2imgHandler extends dataWrapper<txt2img> implements requestHandler {
+    private sd: SDClient | undefined = undefined;
+
+    public bind_sd(sd: SDClient) {
+        this.sd = sd;
+    }
+
+    public handle_request(cl: Client, req: serverRequest) {
+        let img_data: txt2img = this.unpack_data(req.data);
+
+        img_data.txt2img.metadata.id = uuidv4();
+        if(this.sd){
+            let lazy_response = (data: any) => {
+
+                console.log(`elo: ${data}`);
+                // req.data = this.pack_data(img_data);
+                // send_object(cl, req);
+            }
+
+            this.sd.send_txt2img(img_data, lazy_response);
+        }
     }
 }
 
