@@ -1,8 +1,11 @@
 import net from 'net';
 import { v4 as uuidv4 } from 'uuid';
 
-import { connectMsg, disconnectMsg, txt2img } from './types_sd';
+import { connectMsg, disconnectMsg, img64, txt2img } from './types_sd';
 import { ComUtils } from './ComUtils';
+
+import fs from 'fs';
+import sharp from 'sharp';
 
 export const test_send_txt2img = (sd: SDClient) => {
     let sub_command: txt2img = {
@@ -12,8 +15,16 @@ export const test_send_txt2img = (sd: SDClient) => {
                 prompt_negative: "boring skyscape",
                 seed: 0,
                 samples: 1,
+                power: 1.0,
             },
-            metadata: { id: uuidv4() }
+            metadata: { id: uuidv4() },
+            bulk: {
+                img: {
+                    img64: "",
+                    mode: "",
+                    x: 0,
+                    y: 0,
+                }}
         }
     }
 
@@ -90,37 +101,55 @@ export class SDClient {
         }
     }
 
-    private redistribute_object(object: any){
-        let keys = Object.keys(object);
-        if (keys.includes('type') ) {
-            let type = object.type;
-            let has_proper_type = ["txt2img", "progress"].includes(type);
-            if (has_proper_type) {
-                let encoded = object.data;
-                let decoded = JSON.parse(encoded);
-                let meta_id =  decoded[type].metadata.id;
-                console.log(`type: ${type}, id: ${meta_id}`);
+    private get_return_func(id: string) {
+        if(this.idIndex.has(id)){
+            let return_func = this.idIndex.get(id);
+            return return_func;
+        }
 
-                // get return_func
-                // check if it exists
-                if(this.idIndex.has(meta_id)){
+        return undefined;
+    }
 
-                    let return_func = this.idIndex.get(meta_id);
-                    console.log(`and has return fn in index ${return_func}}`);
-                    if(return_func)
-                        return_func(object)
-                }
+    private pass_object_back(object: any){
+        let type = object.type;
+        let has_proper_type = ["txt2img", "progress"].includes(type);
+        if (has_proper_type) {
+            let encoded = object.data;
+            let decoded = JSON.parse(encoded);
+            let meta_id =  decoded[type].metadata.id;
 
+            let return_this = (return_obj: any) =>{
+                let fn = this.get_return_func(meta_id)
+                if(fn) fn(return_obj);
+                else console.log(`!!! No return function for id: ${meta_id}`);
             }
+
+            if(type === "txt2img"){
+                let t2i_obj: txt2img = decoded;
+                let img64: img64 = t2i_obj.txt2img.bulk.img;
+                let rgb = Buffer.from(img64.img64, 'base64');
+                sharp(rgb, { raw: { width: img64.x, height: img64.y, channels: 3 } })
+                    .webp({quality: 100})
+                    .toBuffer((err, buffer, info) =>{
+                        // buffer to base64 string
+                        let base64 = buffer.toString('base64');
+                        img64.img64 = base64;
+                        img64.mode = "png";
+                        object.data = JSON.stringify(decoded);
+                        console.log(`buffer length: ${buffer.length}, base64 length: ${base64.length}`)
+                        return_this(object)
+                    })  
+                
+            }   
+            else return_this(object)
+
         }
     }
 
-    private data_processing(data: Buffer) {
+    private _data_processing(data: Buffer) {
         let compleate_object = this.seg_proc.process(data);
-        if (compleate_object){
-            console.log('Got compleate object');
-            this.redistribute_object(compleate_object);
-        }
+        if (compleate_object)
+            this.pass_object_back(compleate_object);
     }
 
     public connect(port: number, host: string) {
@@ -132,7 +161,6 @@ export class SDClient {
             if (this.client) {
                 let msg: connectMsg = { connect: 1 };
                 this._send(this.client, msg);
-                // this._send_txt2img(this.client)
             }
         });
 
@@ -141,7 +169,7 @@ export class SDClient {
         });
 
         this.client.on('data', (data) => {
-            this.data_processing(data);
+            this._data_processing(data);
         });
     }
 

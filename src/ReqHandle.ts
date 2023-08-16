@@ -69,11 +69,11 @@ export class txt2imgHandler extends dataWrapper<txt2img> implements requestHandl
 
         img_data.txt2img.metadata.id = uuidv4();
         if(this.sd){
-            let lazy_response = (data: any) => {
+            let lazy_response = (response: any) => {
+                let type = response.type;
+                console.log(`send ${type} object to client?`)
 
-                console.log(`elo: ${data}`);
-                // req.data = this.pack_data(img_data);
-                // send_object(cl, req);
+                send_object(cl, response);
             }
 
             this.sd.send_txt2img(img_data, lazy_response);

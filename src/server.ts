@@ -63,17 +63,8 @@ const backend_server = () => {
 	});
 
 	console.log(`Server started on ws://localhost:${port}`);
-	// test_send_txt2img(sd);
 	exit_related(sd);
 }
 
-const sd_test = () => {
-	let sd_port = 6500;
-	let sd = SDClient.getInstance();
-
-	sd.connect(sd_port, '127.0.0.1');
-}
-
 backend_server();
-// sd_test();
 
