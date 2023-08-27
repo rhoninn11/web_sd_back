@@ -1,14 +1,14 @@
 import WebSocket from 'ws';
-import { Client, serverRequest } from './types';
+import { Client, serverRequest } from './types/types';
 import { ClientStore } from './ClientStore';
-import { authHandler, txt2imgHandler } from './ReqHandle';
-import { SDClient, test_send_txt2img, } from './StableDiffusionConnect';
+import { authHandler, txt2imgHandler, nodeHandler, EdgeHandler } from './ReqHandle';
+import { SDClient} from './StableDiffusionConnect';
+import { DBStore } from './DBStore';
 
 const send_object = (cl: Client, obj: any) => {
 	let json_text = JSON.stringify(obj);
-	cl.ws.send(json_text);
+	cl.ws?.send(json_text);
 }
-
 
 const handle_request = (cl: Client, req: serverRequest, sd: SDClient) => {
 	console.log(`Got request: ${req.type}`);
@@ -21,6 +21,14 @@ const handle_request = (cl: Client, req: serverRequest, sd: SDClient) => {
 		txt2img_handler.bind_sd(sd);
 		txt2img_handler.handle_request(cl, req);
 	}
+	else if (req.type == 'serverNode'){
+		let handler = new nodeHandler();
+		handler.handle_request(cl, req);
+	}
+	else if (req.type == 'serverEdge'){
+		let handler = new EdgeHandler();
+		handler.handle_request(cl, req);
+	}
 }
 
 const handle_message = (cl: Client, message: any, sd: SDClient) => {
@@ -28,11 +36,11 @@ const handle_message = (cl: Client, message: any, sd: SDClient) => {
 	handle_request(cl, msg, sd)
 }
 
-const exit_related = (sd: SDClient) => {
-
+const exit_related = (sd: SDClient, db: DBStore) => {
 	process.on('SIGINT', (code) => {
 		sd.close();
-		// waith 10 seconds for the socket to close
+		db.exit();
+		// waith a second for the socket to close
 		setTimeout(() => {
 			process.exit();
 		}, 1000);
@@ -41,7 +49,8 @@ const exit_related = (sd: SDClient) => {
 	process.on('SIGUSR2', (code) => {
 		console.log('nodemon SIGUSR2');
 		sd.close();
-		// waith 10 seconds for the socket to close
+		db.exit();
+		// waith a second for the socket to close
 		setTimeout(() => {
 			process.exit();
 		}, 1000);
@@ -51,6 +60,9 @@ const exit_related = (sd: SDClient) => {
 const backend_server = () => {
 	let port = 8700;
 	let sd_port = 6500;
+
+	const db = DBStore.getInstance();
+	db.external_test();
 
 	const sd = SDClient.getInstance();
 	sd.connect(sd_port, '127.0.0.1');
@@ -63,7 +75,7 @@ const backend_server = () => {
 	});
 
 	console.log(`Server started on ws://localhost:${port}`);
-	exit_related(sd);
+	exit_related(sd, db);
 }
 
 backend_server();

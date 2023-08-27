@@ -1,43 +1,9 @@
 import net from 'net';
-import { v4 as uuidv4 } from 'uuid';
 
-import { connectMsg, disconnectMsg, img64, txt2img } from './types_sd';
-import { ComUtils } from './ComUtils';
+import { connectMsg, disconnectMsg, img64, txt2img } from './types/types_sd';
+import { SDComUtils } from './SDComUtils';
 
-import fs from 'fs';
 import sharp from 'sharp';
-
-export const test_send_txt2img = (sd: SDClient) => {
-    let sub_command: txt2img = {
-        txt2img: {
-            config: {
-                prompt: "Sunny day over the sea, pastel painting",
-                prompt_negative: "boring skyscape",
-                seed: 0,
-                samples: 1,
-                power: 1.0,
-            },
-            metadata: { id: uuidv4() },
-            bulk: {
-                img: {
-                    img64: "",
-                    mode: "",
-                    x: 0,
-                    y: 0,
-                }}
-        }
-    }
-
-    let command = { 
-        type: "txt2img",
-        data: JSON.stringify(sub_command)
-    }
-
-    setTimeout(() => {
-        console.log('Sending command');
-        sd.send(command);
-    }, 1000);
-}
 
 
 class SegmentationProcessor {
@@ -60,8 +26,8 @@ class SegmentationProcessor {
         if (this.reciveing_buffer.byteLength === this.reciveing_len) {
             this.is_reciveing = false;
 
-            let u_data = ComUtils.unwrap_data(this.reciveing_buffer)
-            let obj = ComUtils.bytes2json2obj(u_data);
+            let u_data = SDComUtils.unwrap_data(this.reciveing_buffer)
+            let obj = SDComUtils.bytes2json2obj(u_data);
             return obj;
         }
 
@@ -174,8 +140,8 @@ export class SDClient {
     }
 
     private _send(sock: net.Socket, obj: any) {
-        let msg_bytes = ComUtils.obj2json2bytes(obj);
-        let wrapped_msg = ComUtils.wrap_data(msg_bytes);
+        let msg_bytes = SDComUtils.obj2json2bytes(obj);
+        let wrapped_msg = SDComUtils.wrap_data(msg_bytes);
         sock.write(wrapped_msg);
     }
 

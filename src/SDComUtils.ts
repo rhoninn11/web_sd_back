@@ -1,7 +1,7 @@
 
 
 
-export class ComUtils {
+export class SDComUtils {
     public static obj2json2bytes(obj: any): Buffer {
         let json_text: string = "";
         // TODO - handle possible errors
