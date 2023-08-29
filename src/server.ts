@@ -62,7 +62,6 @@ const backend_server = () => {
 	let sd_port = 6500;
 
 	const db = DBStore.getInstance();
-	db.external_test();
 
 	const sd = SDClient.getInstance();
 	sd.connect(sd_port, '127.0.0.1');

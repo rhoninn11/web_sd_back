@@ -61,6 +61,7 @@ export interface progress_content {
 export interface authData {
 	password: string;
 	auth: boolean;
+    user_id: string;
 }
 
 

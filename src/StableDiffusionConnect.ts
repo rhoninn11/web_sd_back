@@ -4,6 +4,7 @@ import { connectMsg, disconnectMsg, img64, txt2img } from './types/types_sd';
 import { SDComUtils } from './SDComUtils';
 
 import sharp from 'sharp';
+import { DBStore } from './DBStore';
 
 
 class SegmentationProcessor {
@@ -77,6 +78,8 @@ export class SDClient {
     }
 
     private pass_object_back(object: any){
+        let db = DBStore.getInstance()
+
         let type = object.type;
         let has_proper_type = ["txt2img", "progress"].includes(type);
         if (has_proper_type) {
@@ -93,6 +96,8 @@ export class SDClient {
             if(type === "txt2img"){
                 let t2i_obj: txt2img = decoded;
                 let img64: img64 = t2i_obj.txt2img.bulk.img;
+                db.insert_image(meta_id, img64);
+
                 let rgb = Buffer.from(img64.img64, 'base64');
                 sharp(rgb, { raw: { width: img64.x, height: img64.y, channels: 3 } })
                     .webp({quality: 100})

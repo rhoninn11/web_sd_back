@@ -47,6 +47,7 @@ export class authHandler extends dataWrapper<authData> implements requestHandler
         let pwd = auth_data.password;
         auth_data.password = "*".repeat(pwd.length);
         auth_data.auth = this.try_auth_user(cl, pwd);
+        auth_data.user_id = cl.auth_id.toString();
         req.data = this.pack_data(auth_data);
         send_object(cl, req);
     }
