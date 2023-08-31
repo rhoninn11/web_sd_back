@@ -6,13 +6,10 @@ import { Client, serverRequest } from './types/types';
 import { PasswordBank } from './PasswordBank';
 import { FlowOps, ServerEdge, ServerNode, authData, txt2img } from './types/types_sd';
 import { SDClient } from './StableDiffusionConnect';
+import { NodeRepo } from './stores/NodeRepo';
+import { EdgeRepo } from './stores/EdgeRepo';
 
 const wss = new WebSocket.Server({ port: 8765 });
-
-interface progressData{
-    progress: number;
-    id: string;
-}
 
 interface requestHandler {
     handle_request: (cl: Client, req: serverRequest) => void;
@@ -82,25 +79,40 @@ export class nodeHandler extends dataWrapper<ServerNode> implements requestHandl
     public handle_request(cl: Client, req: serverRequest) {
         let node_data = this.unpack_data(req.data);
 
-        if(node_data.node_op == FlowOps.CRATE){
-            node_data.serv_id = uuidv4();
-            node_data.user_id = cl.auth_id.toString();
-        }
+        if(node_data.node_op == FlowOps.CRATE)
+            node_data = this.create_node_on_server(cl, node_data);
 
         req.data = this.pack_data(node_data);
         send_object(cl, req);
     }
+    
+    create_node_on_server(cl: Client, node_data: ServerNode): ServerNode {
+        let node_repo = NodeRepo.getInstance();
+        let uuid = uuidv4();
+        node_data.serv_id = uuid;
+        node_data.user_id = cl.auth_id.toString();
+        node_repo.insert_node(uuid, node_data);
+        
+        return node_data;
+    }
 }
 
 export class EdgeHandler extends dataWrapper<ServerEdge> implements requestHandler  {
+    private create_edge_on_server = (cl: Client, edge_data: ServerEdge) => {
+        let edge_repo = EdgeRepo.getInstance();
+        let uuid = uuidv4();
+        edge_data.serv_id = uuid;
+        edge_data.user_id = cl.auth_id.toString();
+        edge_repo.insert_edge(uuid, edge_data);
+        
+        return edge_data;
+    }
 
     public handle_request(cl: Client, req: serverRequest) {
         let edge_data = this.unpack_data(req.data);
 
-        if(edge_data.node_op == FlowOps.CRATE){
-            edge_data.serv_id = uuidv4();
-            edge_data.user_id = cl.auth_id.toString();
-        }
+        if(edge_data.node_op == FlowOps.CRATE)
+            edge_data = this.create_edge_on_server(cl, edge_data);
 
         req.data = this.pack_data(edge_data);
         send_object(cl, req);

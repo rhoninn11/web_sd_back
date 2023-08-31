@@ -3,7 +3,10 @@ import { Client, serverRequest } from './types/types';
 import { ClientStore } from './ClientStore';
 import { authHandler, txt2imgHandler, nodeHandler, EdgeHandler } from './ReqHandle';
 import { SDClient} from './StableDiffusionConnect';
-import { DBStore } from './DBStore';
+import { DBStore } from './stores/DBStore';
+import { ImgRepo } from './stores/ImgRepo';
+import { NodeRepo } from './stores/NodeRepo';
+import { EdgeRepo } from './stores/EdgeRepo';
 
 const send_object = (cl: Client, obj: any) => {
 	let json_text = JSON.stringify(obj);
@@ -57,11 +60,20 @@ const exit_related = (sd: SDClient, db: DBStore) => {
 	});
 }
 
-const backend_server = () => {
+const backend_server = async () => {
 	let port = 8700;
 	let sd_port = 6500;
 
 	const db = DBStore.getInstance();
+	const imgStore = ImgRepo.getInstance();
+	const nodeRepo = NodeRepo.getInstance();
+	const edgeRepo = EdgeRepo.getInstance();
+
+	await imgStore.bindDBStore(db);
+	await nodeRepo.bindDBStore(db);
+	await edgeRepo.bindDBStore(db);
+
+
 
 	const sd = SDClient.getInstance();
 	sd.connect(sd_port, '127.0.0.1');
