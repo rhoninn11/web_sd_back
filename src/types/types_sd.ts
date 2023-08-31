@@ -71,11 +71,19 @@ export enum FlowOps {
     CRATE = 'create',
 }
 
+export interface NodePosition {
+    x: number;
+    y: number;
+}
+
 export class ServerNode {
     serv_id: string = '';
     user_id: string = '';
     node_op: FlowOps = FlowOps.NONE;
+    pos: NodePosition = {x: 0, y: 0};
+    deleted: boolean = false;
 }
+
 
 export class ServerEdge {
     serv_id: string = '';

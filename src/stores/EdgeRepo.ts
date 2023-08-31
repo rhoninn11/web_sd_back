@@ -1,4 +1,4 @@
-import { ServerNode } from "../types/types_sd";
+import { ServerNode, ServerEdge } from "../types/types_sd";
 import { DBStore, DBRecord } from "./DBStore";
 
 export class EdgeRepo {
@@ -28,7 +28,7 @@ export class EdgeRepo {
         if (images) this.nodes = images;
     }
 
-    insert_edge(uuid: string, node_data: ServerNode) {
+    insert_edge(uuid: string, node_data: ServerEdge) {
         this.DBStore?.insert_node(uuid, JSON.stringify(node_data));
     }
 }
