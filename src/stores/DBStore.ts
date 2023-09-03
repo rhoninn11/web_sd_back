@@ -1,10 +1,4 @@
-import WebSocket from 'ws';
-import sql, { sqlite3, Database } from 'sqlite3'
-import { Client } from '../types/types';
-import { PasswordBank } from '../PasswordBank';
-
-import fs from 'fs';
-import { img64 } from '../types/types_sd';
+import sql, { Database } from 'sqlite3'
 
 const DB_FILE = 'tmp/db.sqlite3';
 

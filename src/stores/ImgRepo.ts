@@ -1,4 +1,4 @@
-import { img64 } from "../types/types_sd";
+import { img64 } from "../types/03_sd_t";
 import { DBRecord, DBStore} from "./DBStore";
 
 export class imgDBRecord {

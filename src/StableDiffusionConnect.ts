@@ -1,10 +1,10 @@
 import net from 'net';
 
-import { connectMsg, disconnectMsg, img64, txt2img } from './types/types_sd';
+import { connectMsg, disconnectMsg, txt2img } from './types/types_sd';
+import { img64 } from './types/03_sd_t';
 import { SDComUtils } from './SDComUtils';
 
 import sharp from 'sharp';
-import { DBStore } from './stores/DBStore';
 import { ImgRepo } from './stores/ImgRepo';
 
 

@@ -1,11 +1,11 @@
-import { ServerNode, ServerEdge } from "../types/types_sd";
 import { DBStore, DBRecord } from "./DBStore";
+import { ServerEdge } from "../types/04_edge_t";
 
 export class EdgeRepo {
     
     private static instance: EdgeRepo;
     private DBStore: DBStore | undefined = undefined;
-    private nodes: DBRecord[] = [];
+    private edges: DBRecord[] = [];
 
     private constructor() {
     }
@@ -24,11 +24,11 @@ export class EdgeRepo {
     }
 
     private async _fetch_edges() {
-        let images = await this.DBStore?.get_nodes();
-        if (images) this.nodes = images;
+        let edges = await this.DBStore?.get_nodes();
+        if (edges) this.edges = edges;
     }
 
     insert_edge(uuid: string, node_data: ServerEdge) {
-        this.DBStore?.insert_node(uuid, JSON.stringify(node_data));
+        this.DBStore?.insert_edge(uuid, JSON.stringify(node_data));
     }
 }

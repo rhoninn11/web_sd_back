@@ -1,5 +1,3 @@
-import { Client } from "./types/types";
-
 
 export class PasswordBank {
     private password_idx: { password: string, inUse: boolean }[];

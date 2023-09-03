@@ -8,8 +8,3 @@ export class Client {
 		this.ws = ws;
 	}
 }
-
-export interface serverRequest {
-	type: string;
-	data: string;
-}

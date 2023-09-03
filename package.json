@@ -8,9 +8,11 @@
     "dev": "nodemon --watch 'src/**/*.ts' --exec ts-node src/server.ts"
   },
   "dependencies": {
+    "@types/lodash": "^4.14.197",
     "@types/sqlite3": "^3.1.8",
     "express": "^4.17.1",
     "http": "0.0.1-security",
+    "lodash": "^4.17.21",
     "sharp": "^0.32.5",
     "sqlite3": "^5.1.6",
     "ts-node": "^10.2.1",

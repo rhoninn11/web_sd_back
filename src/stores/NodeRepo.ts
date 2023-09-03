@@ -1,5 +1,5 @@
-import { ServerNode } from "../types/types_sd";
 import { DBStore, DBRecord } from "./DBStore";
+import { ServerNode } from "../types/01_node_t";
 
 export class NodeRepo {
     
@@ -24,8 +24,8 @@ export class NodeRepo {
     }
 
     private async _fetch_node() {
-        let images = await this.DBStore?.get_nodes();
-        if (images) this.nodes = images;
+        let nodes = await this.DBStore?.get_nodes();
+        if (nodes) this.nodes = nodes;
     }
 
     insert_node(uuid: string, node_data: ServerNode) {

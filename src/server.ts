@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { Client, serverRequest } from './types/types';
+import { Client } from './types/types';
 import { ClientStore } from './ClientStore';
 import { authHandler, txt2imgHandler, nodeHandler, EdgeHandler } from './ReqHandle';
 import { SDClient} from './StableDiffusionConnect';
@@ -7,6 +7,7 @@ import { DBStore } from './stores/DBStore';
 import { ImgRepo } from './stores/ImgRepo';
 import { NodeRepo } from './stores/NodeRepo';
 import { EdgeRepo } from './stores/EdgeRepo';
+import { serverRequest } from './types/02_serv_t';
 
 const send_object = (cl: Client, obj: any) => {
 	let json_text = JSON.stringify(obj);
