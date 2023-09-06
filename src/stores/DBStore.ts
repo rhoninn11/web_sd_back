@@ -1,4 +1,6 @@
 import sql, { Database } from 'sqlite3'
+import { ServerEdge } from '../types/04_edge_t';
+import { ServerNode } from '../types/01_node_t';
 
 const DB_FILE = 'tmp/db.sqlite3';
 
@@ -62,8 +64,10 @@ export class DBStore {
         });
 
         let nodes = await call.then((db_data) => db_data as DBRecord[]);
-        console.log(`+++ db has ${nodes.length} nodes`);
-        return nodes;
+        let parsed_nodes = nodes.map((edge) => JSON.parse(edge.json) as ServerNode);
+        console.log(`+++ db has ${parsed_nodes.length} nodes`);
+
+        return parsed_nodes;
     }
 
 
@@ -85,8 +89,10 @@ export class DBStore {
         });
 
         let edges = await call.then((db_data) => db_data as DBRecord[]);
-        console.log(`+++ db has ${edges.length} edges`);
-        return edges;
+        let parsed_edges = edges.map((edge) => JSON.parse(edge.json) as ServerEdge);
+        console.log(`+++ db has ${parsed_edges.length} edges`);
+
+        return parsed_edges;
     }
 
     public insert_image(uuid: string, json: string) {

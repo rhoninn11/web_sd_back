@@ -5,7 +5,7 @@ export class EdgeRepo {
     
     private static instance: EdgeRepo;
     private DBStore: DBStore | undefined = undefined;
-    private edges: DBRecord[] = [];
+    private serv_edges: ServerEdge[] = [];
 
     private constructor() {
     }
@@ -24,11 +24,23 @@ export class EdgeRepo {
     }
 
     private async _fetch_edges() {
-        let edges = await this.DBStore?.get_nodes();
-        if (edges) this.edges = edges;
+        let edges = await this.DBStore?.get_edges();
+        if (edges) [
+            this.serv_edges = edges
+        ]
     }
 
-    insert_edge(uuid: string, node_data: ServerEdge) {
+    public insert_edge(uuid: string, node_data: ServerEdge) {
+        this.serv_edges.push(node_data);
         this.DBStore?.insert_edge(uuid, JSON.stringify(node_data));
+    }
+
+    public get_edge(uuid: string) {
+        let edge = this.serv_edges.find((edge) => edge.db_edge.serv_id === uuid);
+        return edge;
+    }
+
+    public get_all_edges() {
+        return this.serv_edges;
     }
 }

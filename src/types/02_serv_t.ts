@@ -1,5 +1,7 @@
-import { cloneDeep } from "lodash";
+import { cloneDeep, set } from "lodash";
 import { metadata, txt2img_config } from "./03_sd_t";
+import { DBNode, FlowNode } from "./01_node_t";
+import { DBEdge, FlowEdge } from "./04_edge_t";
 
 export class PromptRealatedData {
 	public propmt_cfg: txt2img_config = new txt2img_config();
@@ -22,10 +24,10 @@ export interface serverRequest {
 	data: string;
 }
 
-export interface authData {
-	password: string;
-	auth: boolean;
-    user_id: string;
+export class authData {
+	password: string = '';
+	auth: boolean = false;
+    user_id: string = '';
 }
 
 export interface progress {
@@ -36,5 +38,36 @@ export interface progress_content {
     metadata: metadata;
     value: number;
 }
+export enum syncOps {
+    NONE = 'none',
+    INFO = 'info',
+    ACCCEPT = 'accept',
+    TRANSFER = 'transfer',
+    FINISH = 'finish',
+}
 
+export class syncSignature {
+    sync_op: syncOps = syncOps.NONE;
+    node_id_arr: string[] = [];
+    edge_id_arr: string[] = [];
+    node_data_arr: DBNode[] = [];
+    edge_data_arr: DBEdge[] = [];
 
+    set_ids(nodes: string[], edges: string[] ){
+        this.node_id_arr = nodes;
+        this.edge_id_arr = edges;
+        return this;
+    }
+
+    fill_ids(nodes: DBNode[], edges: DBEdge[] ){
+        let node_id_arr = nodes.map((node) => node.serv_id)
+		let edge_id_arr = edges.map((edge) => edge.serv_id)
+        this.set_ids(node_id_arr, edge_id_arr);
+    }
+
+    fill_data(nodes: DBNode[], edges: DBEdge[] ){
+        this.fill_ids(nodes, edges);
+        this.node_data_arr = nodes;
+        this.edge_data_arr = edges;
+    }
+}

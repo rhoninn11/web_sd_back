@@ -1,32 +1,34 @@
 import WebSocket from 'ws';
 import { Client } from './types/types';
 import { ClientStore } from './ClientStore';
-import { authHandler, txt2imgHandler, nodeHandler, EdgeHandler } from './ReqHandle';
+import { AuthHandler } from './request_processing/AuthHandler';
+import { Txt2imgHandler } from './request_processing/Txt2imgHandler';
+import { NodeHandler } from './request_processing/NodeHandler';
+import { EdgeHandler } from './request_processing/EdgeHandler';
 import { SDClient} from './StableDiffusionConnect';
 import { DBStore } from './stores/DBStore';
+
 import { ImgRepo } from './stores/ImgRepo';
 import { NodeRepo } from './stores/NodeRepo';
 import { EdgeRepo } from './stores/EdgeRepo';
-import { serverRequest } from './types/02_serv_t';
 
-const send_object = (cl: Client, obj: any) => {
-	let json_text = JSON.stringify(obj);
-	cl.ws?.send(json_text);
-}
+import { serverRequest } from './types/02_serv_t';
+import { handRepositoryInit } from './request_processing/init';
+import { HandlerRepository } from './request_processing/HandlerRepository';
 
 const handle_request = (cl: Client, req: serverRequest, sd: SDClient) => {
-	console.log(`Got request: ${req.type}`);
 	if (req.type == 'auth') {
-		let auth_handler = new authHandler();
+		let auth_handler = new AuthHandler();
+		console.log('auth request', req);
 		auth_handler.handle_request(cl, req);
 	}
 	else if (req.type == 'txt2img'){
-		let txt2img_handler = new txt2imgHandler();
+		let txt2img_handler = new Txt2imgHandler();
 		txt2img_handler.bind_sd(sd);
 		txt2img_handler.handle_request(cl, req);
 	}
 	else if (req.type == 'serverNode'){
-		let handler = new nodeHandler();
+		let handler = new NodeHandler();
 		handler.handle_request(cl, req);
 	}
 	else if (req.type == 'serverEdge'){
@@ -37,7 +39,8 @@ const handle_request = (cl: Client, req: serverRequest, sd: SDClient) => {
 
 const handle_message = (cl: Client, message: any, sd: SDClient) => {
 	let msg: serverRequest = JSON.parse(message);
-	handle_request(cl, msg, sd)
+	console.log('+++ received message', msg.type);
+	HandlerRepository.getInstance()?.get_handler(msg.type)?.handle_request(cl, msg);
 }
 
 const exit_related = (sd: SDClient, db: DBStore) => {
@@ -65,19 +68,19 @@ const backend_server = async () => {
 	let port = 8700;
 	let sd_port = 6500;
 
+	
 	const db = DBStore.getInstance();
 	const imgStore = ImgRepo.getInstance();
 	const nodeRepo = NodeRepo.getInstance();
 	const edgeRepo = EdgeRepo.getInstance();
-
+	
 	await imgStore.bindDBStore(db);
 	await nodeRepo.bindDBStore(db);
 	await edgeRepo.bindDBStore(db);
-
-
-
+	
 	const sd = SDClient.getInstance();
 	sd.connect(sd_port, '127.0.0.1');
+	handRepositoryInit(sd)
 
 	const wss = new WebSocket.Server({ port: port });
 	wss.on('connection', (ws) => {
