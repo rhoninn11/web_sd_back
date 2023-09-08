@@ -15,18 +15,10 @@ export class EdgeHandler extends TypedRequestHandler<ServerEdge> {
 
     private create_edge_on_server = (cl: Client, edge_data: ServerEdge) => {
         let edge_repo = EdgeRepo.getInstance();
-        let uuid = uuidv4();
-        edge_data.db_edge.serv_id = uuid;
         edge_data.user_id = cl.auth_id.toString();
-        edge_repo.insert_edge(uuid, edge_data);
-
+        let edge_id = edge_repo.insert_edge(edge_data);
+        edge_data.db_edge.id = edge_id;
         return edge_data;
-    };
-
-    private sync_edge_on_server = (cl: Client, edge_data: ServerEdge) => {
-        let edge_repo = EdgeRepo.getInstance();
-        edge_repo.insert_edge(edge_data.db_edge.serv_id, edge_data);
-        console.log(`+++ sync edge ${edge_data.db_edge.serv_id}`);
     };
 
     public handle_request(cl: Client, req: serverRequest) {
@@ -35,8 +27,7 @@ export class EdgeHandler extends TypedRequestHandler<ServerEdge> {
         if (edge_data.node_op == FlowOps.CREATE)
             edge_data = this.create_edge_on_server(cl, edge_data);
 
-        if (edge_data.node_op == FlowOps.CLIENT_SYNC)
-            this.sync_edge_on_server(cl, edge_data);
+        // if (edge_data.node_op == FlowOps.CLIENT_SYNC)
 
         req.data = this.pack_data(edge_data);
         send_object(cl, req);

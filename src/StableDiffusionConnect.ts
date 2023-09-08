@@ -99,7 +99,8 @@ export class SDClient {
                 let img64: img64 = t2i_obj.txt2img.bulk.img;
 
 
-                imgRepo.insert_image(meta_id, img64);
+                let img_id = imgRepo.insert_image(img64);
+                img64.id = img_id;
 
                 let rgb = Buffer.from(img64.img64, 'base64');
                 sharp(rgb, { raw: { width: img64.x, height: img64.y, channels: 3 } })

@@ -21,8 +21,7 @@ export class NodeHandler extends TypedRequestHandler<ServerNode> {
         if (node_data.node_op == FlowOps.CREATE)
             node_data = this.create_node_on_server(cl, node_data);
 
-        if (node_data.node_op == FlowOps.CLIENT_SYNC)
-            this.sync_node_on_server(node_data);
+        // if (node_data.node_op == FlowOps.CLIENT_SYNC)
 
         req.data = this.pack_data(node_data);
         send_object(cl, req);
@@ -30,17 +29,12 @@ export class NodeHandler extends TypedRequestHandler<ServerNode> {
 
     create_node_on_server(cl: Client, node_data: ServerNode): ServerNode {
         let node_repo = NodeRepo.getInstance();
-        let uuid = uuidv4();
-        node_data.db_node.serv_id = uuid;
         node_data.user_id = cl.auth_id.toString();
-        node_repo.insert_node(uuid, node_data);
+        let node_id = node_repo.insert_node(node_data);
+        node_data.db_node.id = parseInt(node_id);
 
         return node_data;
     }
 
-    sync_node_on_server(node_data: ServerNode) {
-        let node_repo = NodeRepo.getInstance();
-        node_repo.insert_node(node_data.db_node.serv_id, node_data);
-        console.log(`+++ sync node ${node_data.db_node.serv_id}`);
-    }
+
 }

@@ -30,13 +30,15 @@ export class NodeRepo {
         }
     }
 
-    public insert_node(uuid: string, node_data: ServerNode) {
+    public insert_node(node_data: ServerNode) {
+        let uuid = this.serv_nodes.length.toString();
         this.serv_nodes.push(node_data);
         this.DBStore?.insert_node(uuid, JSON.stringify(node_data));
+        return uuid;
     }
 
     public get_node(uuid: string) {
-        let node = this.serv_nodes.find((node) => node.db_node.serv_id === uuid);
+        let node = this.serv_nodes.find((node) => node.db_node.id.toString() === uuid);
         return node;
     }
 

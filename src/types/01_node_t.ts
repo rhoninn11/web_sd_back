@@ -1,31 +1,42 @@
 import { FlowOps, NodePosition, RenderData } from "./00_flow_t";
 import { PromptRealatedData } from "./02_serv_t";
-import { txt2img_config } from "./03_sd_t";
+import { promptConfig } from "./03_sd_t";
 
+
+export class PromptReference {
+    prompt: promptConfig = new promptConfig();
+    prompt_img_id: number = -1;
+}
 
 export interface NodeData {
-	db_id: number;
-    serv_id: string;
-	data_prompt: PromptRealatedData;
-    data_render: RenderData;
+	id: string;
+    initial_node_id: number;
+    result_data: PromptReference;
+}
+
+interface NodeCallbacks {
+    on_update_result_img: () => void;
+    on_update_result_prompt: () => void;
+}
+
+export interface NodeConnData {
+    node_data: NodeData;
+    node_callback: NodeCallbacks | null;
 }
 
 export interface FlowNode {
     id: string;
     type: string;
     position: NodePosition;
-    data: NodeData
+    data: NodeConnData
 }
 
 export class DBNode {
-    db_id: number = -1;
-    id: string = '';
-    serv_id: string = '';
-
-    type: string = '';
+    id: number = -1;
     position: NodePosition = { x: 0, y: 0 };
-    prompt: txt2img_config = new txt2img_config();
-    img: string = '';
+
+    initial_node_id: number = -1;
+    result_data: PromptReference = new PromptReference();
 }
 
 export class ServerNode {

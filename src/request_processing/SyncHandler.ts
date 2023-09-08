@@ -3,7 +3,7 @@ import { serverRequest, syncSignature, syncOps } from '../types/02_serv_t';
 import { TypedRequestHandler, send_object } from './RequestHandler';
 import { EdgeRepo } from '../stores/EdgeRepo';
 import { NodeRepo } from '../stores/NodeRepo';
-import _ from 'lodash';
+import _, { clone } from 'lodash';
 
 export class SyncHandler extends TypedRequestHandler<syncSignature> {
     constructor() {
@@ -12,17 +12,24 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
     }
 
     private check_with_server(sync_data: syncSignature){
-
         let db_nodes = NodeRepo.getInstance().get_all_nodes().map((node) => node.db_node)
         let db_edges = EdgeRepo.getInstance().get_all_edges().map((edge) => edge.db_edge)
-        let serv_node_ids = db_nodes.map((node) => node.serv_id)
-        let serv_edge_ids = db_edges.map((edge) => edge.serv_id)
+        let serv_node_ids = db_nodes.map((node) => node.id.toString())
+        let serv_edge_ids = db_edges.map((edge) => edge.id.toString())
 
-        let client_node_ids = sync_data.edge_id_arr;
-        let client_edge_ids = sync_data.node_id_arr;
+        let client_edge_ids = sync_data.edge_id_arr;
+        let client_node_ids = sync_data.node_id_arr;
+
+        console.log('+++ server nodes (', serv_node_ids.length, ')  <---> client nodes (', client_node_ids.length, ')')
+        console.log('+++ server edges (', serv_edge_ids.length, ')  <---> client edges (', client_edge_ids.length, ')')
 
         let nodes_to_sync = _.difference(serv_node_ids, client_node_ids)
         let edges_to_sync = _.difference(serv_edge_ids, client_edge_ids)
+
+        console.log('+++ nodes diference')
+        console.log(nodes_to_sync)
+        console.log('+++ edges diference')
+        console.log(edges_to_sync)
 
         let new_sync_data = new syncSignature().set_ids(nodes_to_sync, edges_to_sync)
         new_sync_data.sync_op = syncOps.INFO;

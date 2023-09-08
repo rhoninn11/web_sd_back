@@ -1,10 +1,10 @@
 import { cloneDeep, set } from "lodash";
-import { metadata, txt2img_config } from "./03_sd_t";
+import { metadata, promptConfig } from "./03_sd_t";
 import { DBNode, FlowNode } from "./01_node_t";
 import { DBEdge, FlowEdge } from "./04_edge_t";
 
 export class PromptRealatedData {
-	public propmt_cfg: txt2img_config = new txt2img_config();
+	public propmt_cfg: promptConfig = new promptConfig();
 	public img_coded: string = '';
 
     constructor(){
@@ -60,8 +60,8 @@ export class syncSignature {
     }
 
     fill_ids(nodes: DBNode[], edges: DBEdge[] ){
-        let node_id_arr = nodes.map((node) => node.serv_id)
-		let edge_id_arr = edges.map((edge) => edge.serv_id)
+        let node_id_arr = nodes.map((node) => node.id.toString())
+		let edge_id_arr = edges.map((edge) => edge.id.toString())
         this.set_ids(node_id_arr, edge_id_arr);
     }
 

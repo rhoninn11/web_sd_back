@@ -15,6 +15,7 @@ import { EdgeRepo } from './stores/EdgeRepo';
 import { serverRequest } from './types/02_serv_t';
 import { handRepositoryInit } from './request_processing/init';
 import { HandlerRepository } from './request_processing/HandlerRepository';
+import _, { clone } from 'lodash';
 
 const handle_request = (cl: Client, req: serverRequest, sd: SDClient) => {
 	if (req.type == 'auth') {
@@ -93,5 +94,21 @@ const backend_server = async () => {
 	exit_related(sd, db);
 }
 
+
+const test_lodash = () => {
+	let a = ['qrwr',"qweqrw", "asdfg", "giuo", "aso"]
+	let b = ["qrwr","qweqrw", "asdfg", "cbjh"]
+
+	let d1 = _.difference(a, b)
+	let d2 = _.difference(b, a)
+
+	console.log("+++ differencea a b")
+	console.log(d1)
+	console.log("+++ differencea b a")
+	console.log(d2)
+}
+
 backend_server();
+// test_lodash();
+
 
