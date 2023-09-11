@@ -7,7 +7,7 @@ import { FlowOps } from '../types/00_flow_t';
 import { TypedRequestHandler, send_object } from './RequestHandler';
 
 
-export class EdgeHandler extends TypedRequestHandler<ServerEdge> {
+export class EdgeCrateHandler extends TypedRequestHandler<ServerEdge> {
     constructor() {
         super();
         this.type = 'serverEdge';
@@ -16,9 +16,13 @@ export class EdgeHandler extends TypedRequestHandler<ServerEdge> {
     private create_edge_on_server = (cl: Client, edge_data: ServerEdge) => {
         let edge_repo = EdgeRepo.getInstance();
         edge_data.user_id = cl.auth_id.toString();
-        let edge_id = edge_repo.insert_edge(edge_data);
-        edge_data.db_edge.id = edge_id;
-        return edge_data;
+        let server_curated_edge_data = edge_repo.insert_edge(edge_data);
+
+        let new_edge_id = server_curated_edge_data.db_edge.id;
+        console.log('+++ new edge_id', new_edge_id);
+
+        return server_curated_edge_data;
+
     };
 
     public handle_request(cl: Client, req: serverRequest) {

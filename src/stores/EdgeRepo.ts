@@ -30,12 +30,14 @@ export class EdgeRepo {
         ]
     }
 
-    public insert_edge(node_data: ServerEdge) {
-        let uuid = this.serv_edges.length;
-        this.serv_edges.push(node_data);
-        this.DBStore?.insert_edge(uuid.toString(), JSON.stringify(node_data));
-        return uuid;
+    public insert_edge(edge_data: ServerEdge) {
+        let new_edge_id = this.serv_edges.length;
+        edge_data.db_edge.id = new_edge_id;
+        this.serv_edges.push(edge_data);
+        this.DBStore?.insert_edge(new_edge_id.toString(), JSON.stringify(edge_data));
+        return edge_data;
     }
+
 
     public get_edge(uuid: string) {
         let edge = this.serv_edges.find((edge) => edge.db_edge.id.toString() === uuid);

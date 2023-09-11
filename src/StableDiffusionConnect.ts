@@ -98,19 +98,21 @@ export class SDClient {
                 let t2i_obj: txt2img = decoded;
                 let img64: img64 = t2i_obj.txt2img.bulk.img;
 
+                let scimg = imgRepo.insert_image(img64);
 
-                let img_id = imgRepo.insert_image(img64);
-                img64.id = img_id;
-
-                let rgb = Buffer.from(img64.img64, 'base64');
-                sharp(rgb, { raw: { width: img64.x, height: img64.y, channels: 3 } })
+                let rgb = Buffer.from(scimg.img64, 'base64');
+                sharp(rgb, { raw: { width: scimg.x, height: scimg.y, channels: 3 } })
                     .webp({quality: 100})
                     .toBuffer((err, buffer, info) =>{
                         // buffer to base64 string
                         let base64 = buffer.toString('base64');
-                        img64.img64 = base64;
-                        img64.mode = "png";
-                        object.data = JSON.stringify(decoded);
+                        let prefix = `data:image/webp;base64,`
+                        scimg.img64 = prefix + base64;
+                        scimg.img64 = base64;
+                        scimg.mode = "webp";
+                        t2i_obj.txt2img.bulk.img = scimg;
+
+                        object.data = JSON.stringify(t2i_obj);
                         console.log(`buffer length: ${buffer.length}, base64 length: ${base64.length}`)
                         return_this(object)
                     })  

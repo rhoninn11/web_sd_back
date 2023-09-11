@@ -41,18 +41,31 @@ export class ImgRepo {
 
     public async _fetch_images() {
         let images = await this.DBStore?.get_images();
+        // console.log('+++ images fetched')
+        // console.log(images)
         if (images) this.images = images.map((db_record) => fromDBRecord(db_record));
+
     }
 
-    public insert_image(img: img64) {
+    public insert_image(new_img: img64) {
         let img_id = this.images.length;
-        let img_uuid = img_id.toString();
-        img.id = img_id;
+        new_img.id = img_id;
         
-        this.images.push(new DBImg().from(img));
-        
-        let json = JSON.stringify(img);
-        this.DBStore?.insert_image(img_uuid, json);
-        return img_id
+        this.images.push(new DBImg().from(new_img));
+        this.DBStore?.insert_image(img_id.toString(), JSON.stringify(new_img));
+        return new_img
+    }
+
+    
+    public get_all_imgs() {
+        return this.images;
+    }
+
+    public get_img(uuid: string) {
+        let img = this.images.find((img) => {
+            console.log(`+++ ${img.id.toString()} === ${uuid}`)
+            return img.id.toString() === uuid
+        });
+        return img;
     }
 }
