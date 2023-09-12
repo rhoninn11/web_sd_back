@@ -3,7 +3,7 @@ import { AuthHandler } from "./_01_AuthHandler";
 import { NodeCrateHandler } from "./_02_NodeCrateHandler";
 import { EdgeCrateHandler } from "./_03_EdgeCrateHandler";
 import { HandlerRepository } from "./HandlerRepository";
-import { Txt2imgHandler } from "./Txt2imgHandler";
+import { Txt2imgHandler } from "./_06_Txt2imgHandler";
 import { SDClient } from "../StableDiffusionConnect";
 import { SyncHandler } from "./_04_SyncHandler";
 

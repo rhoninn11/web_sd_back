@@ -32,6 +32,10 @@ export class txt2img {
     txt2img: txt2img_content = new txt2img_content();
 }
 
+export class img2img {
+    img2img: txt2img_content = new txt2img_content();
+}
+
 export class DBImg {
     id: number = -1;
     img: img64 = new img64();

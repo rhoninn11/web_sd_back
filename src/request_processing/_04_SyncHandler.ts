@@ -7,6 +7,7 @@ import { ImgRepo } from '../stores/ImgRepo';
 import _, { clone } from 'lodash';
 import sharp from 'sharp';
 import { DBImg } from '../types/03_sd_t';
+import { processRGB2webPng_base64 } from '../image_proc';
 
 export class SyncHandler extends TypedRequestHandler<syncSignature> {
     constructor() {
@@ -87,26 +88,16 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
         return job;
     }
 
-    private process_img(cl: Client, sync_data: syncSignature, db_img: DBImg, resolve_cb: (sync_data_out: syncSignature) => void) {
+    private process_img(db_img: DBImg) {
         let web_img = new DBImg()
         web_img.id = db_img.id;
-        web_img.img.id = db_img.img.id;
-        web_img.img.x = db_img.img.x;
-        web_img.img.y = db_img.img.y;
 
-        // remove this id from client state
-        cl.sync_signature.img_id_arr = cl.sync_signature.img_id_arr.filter((id) => id != db_img.id.toString())
-        let rgb = Buffer.from(db_img.img.img64, 'base64');
-        sharp(rgb, { raw: { width: db_img.img.x, height: db_img.img.y, channels: 3 } })
-            .webp({ quality: 100 })
-            .toBuffer((err, buffer, info) => {
-                let base64 = buffer.toString('base64');
-                let prefix = `data:image/webp;base64,`
-                web_img.img.img64 = prefix + base64;
-                web_img.img.mode = "webp";
-                sync_data.img_data_arr.push(web_img)
-                resolve_cb(sync_data);
-            });
+        
+        return processRGB2webPng_base64(db_img.img)
+        .then((png_img) => {
+            web_img.img = png_img;
+            return web_img;
+        })
     }
 
 
@@ -119,8 +110,15 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
                 let db_img = ImgRepo.getInstance().get_img(node_id)
                 console.log(`+++ db_img ${db_img}`);
                 if (db_img) {
+                    let db_img_id = db_img.id
+                    // remove this id from client state
+                    cl.sync_signature.img_id_arr = cl.sync_signature.img_id_arr.filter((id) => id != db_img_id.toString())
+                    this.process_img(db_img)
+                    .then((png_img) => {
+                        sync_data.img_data_arr.push(png_img);
+                        resolve(sync_data);
+                    });
                     progress = 1;
-                    this.process_img(cl, sync_data, db_img, (sync_data_out) => resolve(sync_data_out));
                 }
             }
             if (progress == 0) resolve(sync_data);

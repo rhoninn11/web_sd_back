@@ -8,20 +8,16 @@ import { TypedRequestHandler, send_object } from './RequestHandler';
 
 
 export class NodeCrateHandler extends TypedRequestHandler<ServerNode> {
-
     constructor() {
         super();
         this.type = 'serverNode';
     }
-
 
     public handle_request(cl: Client, req: serverRequest) {
         let node_data = this.unpack_data(req.data);
 
         if (node_data.node_op == FlowOps.CREATE)
             node_data = this.create_node_on_server(cl, node_data);
-
-        // if (node_data.node_op == FlowOps.CLIENT_SYNC)
 
         req.data = this.pack_data(node_data);
         send_object(cl, req);
@@ -36,7 +32,5 @@ export class NodeCrateHandler extends TypedRequestHandler<ServerNode> {
         console.log('+++ new node_id', new_node_id);
 
         return server_curated_node_Data;
-    }
-
-
+    };
 }

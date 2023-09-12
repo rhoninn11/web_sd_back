@@ -13,7 +13,17 @@ export class EdgeCrateHandler extends TypedRequestHandler<ServerEdge> {
         this.type = 'serverEdge';
     }
 
-    private create_edge_on_server = (cl: Client, edge_data: ServerEdge) => {
+    public handle_request(cl: Client, req: serverRequest) {
+        let edge_data = this.unpack_data(req.data);
+
+        if (edge_data.node_op == FlowOps.CREATE)
+            edge_data = this.create_edge_on_server(cl, edge_data);
+
+        req.data = this.pack_data(edge_data);
+        send_object(cl, req);
+    }
+
+    create_edge_on_server = (cl: Client, edge_data: ServerEdge) => {
         let edge_repo = EdgeRepo.getInstance();
         edge_data.user_id = cl.auth_id.toString();
         let server_curated_edge_data = edge_repo.insert_edge(edge_data);
@@ -22,18 +32,5 @@ export class EdgeCrateHandler extends TypedRequestHandler<ServerEdge> {
         console.log('+++ new edge_id', new_edge_id);
 
         return server_curated_edge_data;
-
     };
-
-    public handle_request(cl: Client, req: serverRequest) {
-        let edge_data = this.unpack_data(req.data);
-
-        if (edge_data.node_op == FlowOps.CREATE)
-            edge_data = this.create_edge_on_server(cl, edge_data);
-
-        // if (edge_data.node_op == FlowOps.CLIENT_SYNC)
-
-        req.data = this.pack_data(edge_data);
-        send_object(cl, req);
-    }
 }

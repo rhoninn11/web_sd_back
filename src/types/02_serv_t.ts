@@ -20,6 +20,7 @@ export class PromptRealatedData {
 
 
 export interface serverRequest {
+    id: string;
 	type: string;
 	data: string;
 }

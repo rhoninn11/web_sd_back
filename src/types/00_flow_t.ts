@@ -1,4 +1,5 @@
 export enum FlowOps {
+    NONE = 'none',
     CREATE = 'create',
     CLIENT_SYNC = 'client_sync',
     UPDATE = 'update',

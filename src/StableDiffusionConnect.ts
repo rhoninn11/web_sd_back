@@ -1,11 +1,12 @@
 import net from 'net';
 
-import { connectMsg, disconnectMsg, txt2img } from './types/types_sd';
-import { img64 } from './types/03_sd_t';
+import { connectMsg, disconnectMsg } from './types/types_sd';
+import { img2img, img64 } from './types/03_sd_t';
 import { SDComUtils } from './SDComUtils';
 
-import sharp from 'sharp';
 import { ImgRepo } from './stores/ImgRepo';
+import { processRGB2webPng_base64 } from './image_proc';
+import { txt2img } from './types/03_sd_t';
 
 
 class SegmentationProcessor {
@@ -68,6 +69,25 @@ export class SDClient {
             this.bind_return_func(txt2img.txt2img.metadata.id, return_func);
         }
     }
+    
+    public send_img2img(txt2img: img2img, return_func: (data: any) => void) {
+        console.log('Sending txt2img');
+        if (this.client){
+            console.log('Sending txt2img ...');
+
+            // fetch reference image from repo
+
+            let command = { 
+                type: "txt2img",
+                data: JSON.stringify(txt2img)
+            }
+
+            this._send(this.client, command);
+            this.bind_return_func(txt2img.img2img.metadata.id, return_func);
+        }
+    }
+
+
 
     private get_return_func(id: string) {
         if(this.idIndex.has(id)){
@@ -100,23 +120,11 @@ export class SDClient {
 
                 let scimg = imgRepo.insert_image(img64);
 
-                let rgb = Buffer.from(scimg.img64, 'base64');
-                sharp(rgb, { raw: { width: scimg.x, height: scimg.y, channels: 3 } })
-                    .webp({quality: 100})
-                    .toBuffer((err, buffer, info) =>{
-                        // buffer to base64 string
-                        let base64 = buffer.toString('base64');
-                        let prefix = `data:image/webp;base64,`
-                        scimg.img64 = prefix + base64;
-                        scimg.img64 = base64;
-                        scimg.mode = "webp";
-                        t2i_obj.txt2img.bulk.img = scimg;
-
-                        object.data = JSON.stringify(t2i_obj);
-                        console.log(`buffer length: ${buffer.length}, base64 length: ${base64.length}`)
-                        return_this(object)
-                    })  
-                
+                processRGB2webPng_base64(scimg).then((png_img) => {
+                    t2i_obj.txt2img.bulk.img = png_img;
+                    object.data = JSON.stringify(t2i_obj);
+                    return_this(object)
+                })
             }   
             else return_this(object)
 

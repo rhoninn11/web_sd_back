@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Client } from '../types/types';
-import { txt2img } from '../types/types_sd';
 import { SDClient } from '../StableDiffusionConnect';
 import { serverRequest } from '../types/02_serv_t';
 import { TypedRequestHandler, send_object } from './RequestHandler';
+import { txt2img } from '../types/03_sd_t';
 
 
 export class Txt2imgHandler extends TypedRequestHandler<txt2img> {
@@ -24,11 +24,10 @@ export class Txt2imgHandler extends TypedRequestHandler<txt2img> {
 
         img_data.txt2img.metadata.id = uuidv4();
         if (this.sd) {
-            let lazy_response = (response: any) => {
-                let type = response.type;
-                console.log(`send ${type} object to client?`);
-
-                send_object(cl, response);
+            let lazy_response = (sd_response: any) => {
+                // sd response is almost the same as server request just id is missing
+                sd_response.id = req.id;
+                send_object(cl, sd_response);
             };
 
             this.sd.send_txt2img(img_data, lazy_response);

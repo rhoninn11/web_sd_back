@@ -42,6 +42,7 @@ export class DBStore {
 
     protected create_tables() {
         this.db?.run("CREATE TABLE IF NOT EXISTS nodes (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid, TEXT ,json TEXT)");
+        this.db?.run("CREATE TABLE IF NOT EXISTS edits (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid, TEXT ,json TEXT)");
         this.db?.run("CREATE TABLE IF NOT EXISTS edges (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid, TEXT ,json TEXT)");
         this.db?.run("CREATE TABLE IF NOT EXISTS images (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid, TEXT ,json TEXT)");
     }
@@ -66,6 +67,30 @@ export class DBStore {
         let nodes = await call.then((db_data) => db_data as DBRecord[]);
         let parsed_nodes = nodes.map((edge) => JSON.parse(edge.json) as ServerNode);
         console.log(`+++ db has ${parsed_nodes.length} nodes`);
+
+        return parsed_nodes;
+    }
+
+    public insert_edit(uuid: string, json: string) {
+        this.db?.run("INSERT INTO edits (uuid, json) VALUES (?, ?)", [uuid, json]);
+    }
+    public update_edit(uuid: string, json: string) {
+        this.db?.run("UPDATE edits SET json = ? WHERE uuid = ?", [json, uuid]);
+    }
+    public async get_edits() {
+        let call = new Promise((resolve, reject) => {
+            this.db?.all("SELECT * FROM edits", (err, rows) => {
+                if (err) 
+                    reject(err)
+                
+                let db_records: DBRecord[] = rows as DBRecord[];
+                resolve(db_records);
+            });
+        });
+
+        let nodes = await call.then((db_data) => db_data as DBRecord[]);
+        let parsed_nodes = nodes.map((edge) => JSON.parse(edge.json) as ServerNode);
+        console.log(`+++ db has ${parsed_nodes.length} edits`);
 
         return parsed_nodes;
     }

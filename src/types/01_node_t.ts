@@ -37,6 +37,8 @@ export class DBNode {
 
     initial_node_id: number = -1;
     result_data: PromptReference = new PromptReference();
+
+    timestamp: number = Date.now();
 }
 
 export class ServerNode {
@@ -44,3 +46,4 @@ export class ServerNode {
     node_op: FlowOps = FlowOps.NONE;
     db_node: DBNode = new DBNode();
 }
+
