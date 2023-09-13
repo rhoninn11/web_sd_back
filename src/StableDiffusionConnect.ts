@@ -56,78 +56,73 @@ export class SDClient {
     }
 
     public send_txt2img(txt2img: txt2img, return_func: (data: any) => void) {
+        if (!this.client)
+            return;
+
         console.log('Sending txt2img');
-        if (this.client){
-            console.log('Sending txt2img ...');
 
-            let command = { 
-                type: "txt2img",
-                data: JSON.stringify(txt2img)
-            }
-
-            this._send(this.client, command);
-            this.bind_return_func(txt2img.txt2img.metadata.id, return_func);
+        let command = {
+            type: "txt2img",
+            data: JSON.stringify(txt2img)
         }
+
+        this.bind_return_func(txt2img.txt2img.metadata.id, return_func);
+        this._send(this.client, command);
     }
-    
-    public send_img2img(txt2img: img2img, return_func: (data: any) => void) {
+
+    public send_img2img(img2img: img2img, return_func: (data: any) => void) {
+        if (!this.client)
+            return;
+
         console.log('Sending txt2img');
-        if (this.client){
-            console.log('Sending txt2img ...');
-
-            // fetch reference image from repo
-
-            let command = { 
-                type: "txt2img",
-                data: JSON.stringify(txt2img)
-            }
-
-            this._send(this.client, command);
-            this.bind_return_func(txt2img.img2img.metadata.id, return_func);
-        }
-    }
-
-
-
-    private get_return_func(id: string) {
-        if(this.idIndex.has(id)){
-            let return_func = this.idIndex.get(id);
-            return return_func;
+        let command = {
+            type: "img2img",
+            data: JSON.stringify(img2img)
         }
 
-        return undefined;
+        this.bind_return_func(img2img.img2img.metadata.id, return_func);
+        this._send(this.client, command);
     }
 
-    private pass_object_back(object: any){
-        let imgRepo = ImgRepo.getInstance();
+    private try_execute_return_func(id: string, data: any) {
+        let return_func = this.idIndex.get(id);
+        if (return_func)
+            return_func(data);
+    }
 
+    process_img_result(object_in: any, decoded_data: any, on_finish: (object_out: any) => void) {
+
+        let img64: img64 = decoded_data[object_in.type].bulk.img;
+        let rgb_img = ImgRepo.getInstance().insert_image(img64);
+
+        processRGB2webPng_base64(rgb_img).then((png_img) => {
+            decoded_data[object_in.type].bulk.img = png_img;
+            object_in.data = JSON.stringify(decoded_data);
+            on_finish(object_in)
+        })
+
+    }
+
+    private pass_object_back(object: any) {
         let type = object.type;
-        let has_proper_type = ["txt2img", "progress"].includes(type);
-        if (has_proper_type) {
-            let encoded = object.data;
-            let decoded = JSON.parse(encoded);
-            let meta_id =  decoded[type].metadata.id;
+        let valid_types = ["txt2img", "img2img", "progress"];
+        if (!valid_types.includes(type))
+            return;
 
-            let return_this = (return_obj: any) =>{
-                let fn = this.get_return_func(meta_id)
-                if(fn) fn(return_obj);
-                else console.log(`!!! No return function for id: ${meta_id}`);
-            }
+        let encoded = object.data;
+        let decoded = JSON.parse(encoded);
+        // meaby adopt serverRequest to id available before decode stage
+        let meta_id = decoded[type].metadata.id;
 
-            if(type === "txt2img"){
-                let t2i_obj: txt2img = decoded;
-                let img64: img64 = t2i_obj.txt2img.bulk.img;
+        let on_finish = (object_out: any) => {
+            this.try_execute_return_func(meta_id, object_out)
+        }
 
-                let scimg = imgRepo.insert_image(img64);
-
-                processRGB2webPng_base64(scimg).then((png_img) => {
-                    t2i_obj.txt2img.bulk.img = png_img;
-                    object.data = JSON.stringify(t2i_obj);
-                    return_this(object)
-                })
-            }   
-            else return_this(object)
-
+        let img_types = ["img2img", "txt2img"];
+        if (img_types.includes(type)) {
+            this.process_img_result(object, decoded, on_finish)
+        } else {
+            on_finish(object)
         }
     }
 

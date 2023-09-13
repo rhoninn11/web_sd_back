@@ -20,17 +20,18 @@ export class Txt2imgHandler extends TypedRequestHandler<txt2img> {
     }
 
     public handle_request(cl: Client, req: serverRequest) {
+        if (!this.sd)
+            return;
+
         let img_data: txt2img = this.unpack_data(req.data);
-
         img_data.txt2img.metadata.id = uuidv4();
-        if (this.sd) {
-            let lazy_response = (sd_response: any) => {
-                // sd response is almost the same as server request just id is missing
-                sd_response.id = req.id;
-                send_object(cl, sd_response);
-            };
 
-            this.sd.send_txt2img(img_data, lazy_response);
-        }
+        let lazy_response = (sd_response: any) => {
+            // sd response is almost the same as server request just id is missing
+            sd_response.id = req.id;
+            send_object(cl, sd_response);
+        };
+
+        this.sd.send_txt2img(img_data, lazy_response);
     }
 }

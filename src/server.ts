@@ -72,20 +72,26 @@ const backend_server = async () => {
 }
 
 
-const test_lodash = () => {
-	let a = ['qrwr',"qweqrw", "asdfg", "giuo", "aso"]
-	let b = ["qrwr","qweqrw", "asdfg", "cbjh"]
+const test_fields = () => {
+	
+	let que: number = 1;
+	let wer: number = 2;
+	let ert: number = 3;
 
-	let d1 = _.difference(a, b)
-	let d2 = _.difference(b, a)
+	let sample = {
+		qwe: que,
+		wer: wer,
+		ert: ert
+	}
 
-	console.log("+++ differencea a b")
-	console.log(d1)
-	console.log("+++ differencea b a")
-	console.log(d2)
+	let a = ["qwe", "wer", "ert"]
+	a.forEach((key) => {
+		let elo: number = (sample as any)[key]
+		console.log(key, elo);
+	})
 }
 
 backend_server();
-// test_lodash();
+// test_fields();
 
 
