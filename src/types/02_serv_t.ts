@@ -28,7 +28,7 @@ export interface serverRequest {
 export class authData {
 	password: string = '';
 	auth: boolean = false;
-    user_id: string = '';
+    user_id: number = -1;
 }
 
 export interface progress {

@@ -10,13 +10,14 @@ export class PromptReference {
 
 export interface NodeData {
 	id: string;
+    user_id: number;
     initial_node_id: number;
     result_data: PromptReference;
 }
 
 interface NodeCallbacks {
     on_update_result_img: () => void;
-    on_update_result_prompt: () => void;
+    on_update_result_prompt: () => void;    
 }
 
 export interface NodeConnData {
@@ -27,12 +28,14 @@ export interface NodeConnData {
 export interface FlowNode {
     id: string;
     type: string;
+    draggable: boolean;
     position: NodePosition;
     data: NodeConnData
 }
 
 export class DBNode {
     id: number = -1;
+    user_id: number = -1;
     position: NodePosition = { x: 0, y: 0 };
 
     initial_node_id: number = -1;
@@ -42,7 +45,7 @@ export class DBNode {
 }
 
 export class ServerNode {
-    user_id: string = '';
+    user_id: number = -1;
     node_op: FlowOps = FlowOps.NONE;
     db_node: DBNode = new DBNode();
 }

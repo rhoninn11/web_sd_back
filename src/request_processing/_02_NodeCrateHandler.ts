@@ -25,7 +25,8 @@ export class NodeCrateHandler extends TypedRequestHandler<ServerNode> {
 
     create_node_on_server(cl: Client, node_data: ServerNode): ServerNode {
         let node_repo = NodeRepo.getInstance();
-        node_data.user_id = cl.auth_id.toString();
+        node_data.user_id = cl.auth_id;
+        node_data.db_node.user_id = cl.auth_id;
         let server_curated_node_Data = node_repo.insert_node(node_data);
 
         let new_node_id = server_curated_node_Data.db_node.id;

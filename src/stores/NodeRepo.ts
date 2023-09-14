@@ -7,6 +7,7 @@ class NodeEditStructure {
 
     public try_aplly_edit(edit: ServerNode) {
         if(this.instance.user_id != edit.user_id) return;
+        if(edit.user_id != edit.db_node.user_id) return;
         if(this.instance.db_node.id != edit.db_node.id) return;
         if(this.instance.db_node.timestamp > edit.db_node.timestamp) return;
 

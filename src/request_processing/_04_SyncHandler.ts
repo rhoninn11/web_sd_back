@@ -27,28 +27,28 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
         let client_node_ids = sync_data.node_id_arr;
         let client_img_ids = sync_data.img_id_arr;
 
-        console.log(client_node_ids)
-        console.log(client_edge_ids)
-        console.log(client_img_ids)
+        // console.log(client_node_ids)
+        // console.log(client_edge_ids)
+        // console.log(client_img_ids)
 
-        console.log('+++ server nodes (', serv_node_ids.length, ')  <---> client nodes (', client_node_ids.length, ')')
-        console.log('+++ server edges (', serv_edge_ids.length, ')  <---> client edges (', client_edge_ids.length, ')')
-        console.log('+++ server imgs (', serv_img_ids.length, ')  <---> client imgs (', client_img_ids.length, ')')
+        // console.log('+++ server nodes (', serv_node_ids.length, ')  <---> client nodes (', client_node_ids.length, ')')
+        // console.log('+++ server edges (', serv_edge_ids.length, ')  <---> client edges (', client_edge_ids.length, ')')
+        // console.log('+++ server imgs (', serv_img_ids.length, ')  <---> client imgs (', client_img_ids.length, ')')
 
-        console.log(serv_node_ids)
-        console.log(serv_edge_ids)
-        console.log(serv_img_ids)
+        // console.log(serv_node_ids)
+        // console.log(serv_edge_ids)
+        // console.log(serv_img_ids)
 
         let nodes_to_sync = _.difference(serv_node_ids, client_node_ids)
         let edges_to_sync = _.difference(serv_edge_ids, client_edge_ids)
         let imgs_to_sync = _.difference(serv_img_ids, client_img_ids)
 
-        console.log('+++ nodes diference')
-        console.log(nodes_to_sync)
-        console.log('+++ edges diference')
-        console.log(edges_to_sync)
-        console.log('+++ img diference')
-        console.log(edges_to_sync)
+        // console.log('+++ nodes diference')
+        // console.log(nodes_to_sync)
+        // console.log('+++ edges diference')
+        // console.log(edges_to_sync)
+        // console.log('+++ img diference')
+        // console.log(edges_to_sync)
 
         let new_sync_data = new syncSignature().set_ids(nodes_to_sync, edges_to_sync, imgs_to_sync)
         new_sync_data.sync_op = syncOps.INFO;

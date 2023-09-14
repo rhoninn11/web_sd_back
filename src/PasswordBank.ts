@@ -25,13 +25,13 @@ export class PasswordBank {
     public check_password = (pass: string): number => {
         let passwd_idx = -1;
         this.password_idx.forEach((item, idx, array) => {
-            if (item.password == pass, item.inUse == false) {
+            if (item.password == pass && item.inUse == false) {
                 item.inUse = true;
                 passwd_idx = idx;
             }
         });
 
-        if (passwd_idx >= 0) console.log('Password accepted!');
+        if (passwd_idx >= 0) console.log('<---> Password accepted', passwd_idx);
         else console.log('Password rejected!');
 
         return passwd_idx;

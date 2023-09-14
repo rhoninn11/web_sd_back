@@ -11,7 +11,7 @@ export class NodeUpdateHandler extends TypedRequestHandler<ServerNode> {
 
     constructor() {
         super();
-        this.type = 'serverNode';
+        this.type = 'updateNode';
     }
 
     public handle_request(cl: Client, req: serverRequest) {

@@ -17,7 +17,7 @@ export class ClientStore {
     }
 
     public add_client(ws: WebSocket) {
-        console.log('New client connected!');
+        console.log('<+++> New client connected!');
         const new_client = new Client(ws);
         this.clients_idx.push(new_client);
         return new_client;  
@@ -29,6 +29,6 @@ export class ClientStore {
             PasswordBank.getInstance().release_password(cl.auth_id)
             this.clients_idx.splice(index, 1);
         }
-        console.log('Client disconnected!');
+        console.log('<+++> Client disconnected!');
     }
 }
