@@ -1,22 +1,33 @@
 import { DBStore, DBRecord } from "./DBStore";
 import { ServerNode } from "../types/01_node_t";
+import { v4 as uuid } from 'uuid';
+
 
 class NodeEditStructure {
     instance: ServerNode = new ServerNode();
     edit_drafts: ServerNode[] = [];
+    applied_edits: number = 0;
 
     public try_aplly_edit(edit: ServerNode) {
-        if(this.instance.user_id != edit.user_id) return;
-        if(edit.user_id != edit.db_node.user_id) return;
-        if(this.instance.db_node.id != edit.db_node.id) return;
-        if(this.instance.db_node.timestamp > edit.db_node.timestamp) return;
+        // console.log('try_aplly_edit: ', this.instance, edit);
+        if (this.instance.user_id != edit.user_id) return;
+        if (edit.user_id != edit.db_node.user_id) return;
+        if (this.instance.db_node.id != edit.db_node.id) return;
+        if (this.instance.db_node.timestamp > edit.db_node.timestamp) return;
 
         this.instance = edit;
+        this.applied_edits += 1;
+    }
+
+    public vissualize() {
+        console.log('core: ', this.instance.db_node.id, this.instance.db_node.timestamp);
+        console.log("edits: ", this.edit_drafts.map((edit) => edit.db_node.timestamp));
+        console.log("applied edits: ", this.applied_edits);
     }
 }
 
 export class NodeRepo {
-    
+
     private static instance: NodeRepo;
     private DBStore: DBStore | undefined = undefined;
     private serv_editable_nodes: NodeEditStructure[] = [];
@@ -43,7 +54,7 @@ export class NodeRepo {
         return edit_structure;
     }
 
-    private _squash_edits(){
+    private _squash_edits() {
         this.serv_editable_nodes.forEach((editable) => {
             let drafts = editable.edit_drafts;
             if (drafts.length > 0) {
@@ -64,16 +75,20 @@ export class NodeRepo {
 
     private async _fetch_node() {
         let nodes = await this.DBStore?.get_nodes();
-        if (nodes) {
-            this.serv_editable_nodes = nodes.map((node) => this.base_edit_Structure_of_node(node));
-            let edits = await this.DBStore?.get_edits();
-            if (edits){
-                this._apply_edits(edits);
-                this._squash_edits();
-            }
+        let edits = await this.DBStore?.get_edits();
+        if (!nodes || !edits) return;
+
+        this.serv_editable_nodes = nodes.map((node) => this.base_edit_Structure_of_node(node));
+        if (edits) {
+            this._apply_edits(edits);
+            this.serv_editable_nodes.forEach((editable) => editable.vissualize());
+            this._squash_edits();
+            this.serv_editable_nodes.forEach((editable) => editable.vissualize());
+            // this.serv_editable_nodes.forEach((editable) => console.log(editable.instance));
             
         }
     }
+
 
     public insert_node(node_data: ServerNode) {
         let new_node_id = this.serv_editable_nodes.length;
@@ -93,6 +108,10 @@ export class NodeRepo {
     }
 
     public edit_node(node_data: ServerNode) {
+        let nes = this.serv_editable_nodes.filter((es) => es.instance.db_node.id === node_data.db_node.id);
+        nes.forEach((es) => es.edit_drafts.push(node_data));
+        
+        this.DBStore?.insert_edit(uuid(), JSON.stringify(node_data));
         return node_data;
     }
 }

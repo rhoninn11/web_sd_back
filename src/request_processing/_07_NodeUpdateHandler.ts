@@ -20,18 +20,17 @@ export class NodeUpdateHandler extends TypedRequestHandler<ServerNode> {
         if (node_data.node_op == FlowOps.UPDATE)
             node_data = this.update_node_on_server(cl, node_data);
 
-
         req.data = this.pack_data(node_data);
         send_object(cl, req);
     }
 
     update_node_on_server(cl: Client, node_data: ServerNode): ServerNode {
         let node_repo = NodeRepo.getInstance();
+        
+        node_data.db_node.timestamp = Date.now();
         let server_curated_node_edit = node_repo.edit_node(node_data);
-
-        let edit_node_id = server_curated_node_edit.db_node.id;
-        console.log('+++ new node_id', edit_node_id );
-
+        
+        console.log('+++ snode updated: ', server_curated_node_edit.db_node.id);
         return server_curated_node_edit;
     }
 

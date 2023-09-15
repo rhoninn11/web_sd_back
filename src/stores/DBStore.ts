@@ -46,7 +46,7 @@ export class DBStore {
         this.db?.run("CREATE TABLE IF NOT EXISTS edges (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid, TEXT ,json TEXT)");
         this.db?.run("CREATE TABLE IF NOT EXISTS images (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid, TEXT ,json TEXT)");
     }
-
+    // node
     public insert_node(uuid: string, json: string) {
         this.db?.run("INSERT INTO nodes (uuid, json) VALUES (?, ?)", [uuid, json]);
     }
@@ -71,6 +71,7 @@ export class DBStore {
         return parsed_nodes;
     }
 
+    // edit
     public insert_edit(uuid: string, json: string) {
         this.db?.run("INSERT INTO edits (uuid, json) VALUES (?, ?)", [uuid, json]);
     }
@@ -95,7 +96,7 @@ export class DBStore {
         return parsed_nodes;
     }
 
-
+    // edge
     public insert_edge(uuid: string, json: string) {
         this.db?.run("INSERT INTO edges (uuid, json) VALUES (?, ?)", [uuid, json]);
     }
@@ -120,6 +121,7 @@ export class DBStore {
         return parsed_edges;
     }
 
+    // image
     public insert_image(uuid: string, json: string) {
         this.db?.run("INSERT INTO images (uuid, json) VALUES (?, ?)", [uuid, json]);
     }

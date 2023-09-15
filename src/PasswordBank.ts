@@ -4,14 +4,8 @@ export class PasswordBank {
     private static instance: PasswordBank;
     private constructor() {
         this.password_idx = [
-            { password: 'pulsary55.', inUse: false },
-            { password: 'pulsary54.', inUse: false },
-            { password: 'pulsary53.', inUse: false },
-            { password: 'pulsary52.', inUse: false },
-            { password: 'pulsary51.', inUse: false },
             { password: 'pulsary50.', inUse: false },
-            { password: 'pulsary49.', inUse: false },
-            { password: 'pulsary48.', inUse: false },
+            { password: 'pulsary51.', inUse: false },
         ]
      }
 
