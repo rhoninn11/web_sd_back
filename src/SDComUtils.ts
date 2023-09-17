@@ -10,15 +10,26 @@ export class SDComUtils {
         return data_bytes;
     }
 
+    private static before_parse_info = (len: number): void => {
+        process.stdout.write(` +SDCOM+ json len: ${len}, parse: BEFORE !+!`);
+    }
+
+    private static after_parse_info = (): void => {
+        process.stdout.write(` After !+!n`);
+    }
+
     public static bytes2json2obj(bytes: Buffer): any {
         let json = bytes.toString('utf8');
         let j_len = json.length;
-        console.log(`json len: ${j_len}`);
         let last_char = json[j_len - 1]
         if (last_char == '\0') {
             json = json.slice(0, j_len - 1);
         }
+
+        SDComUtils.before_parse_info(j_len);
         let obj = JSON.parse(json);
+        SDComUtils.after_parse_info();
+        
         return obj;
     }
 

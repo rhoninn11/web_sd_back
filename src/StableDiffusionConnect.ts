@@ -113,6 +113,7 @@ export class SDClient {
         let decoded = JSON.parse(encoded);
         // meaby adopt serverRequest to id available before decode stage
         let meta_id = decoded[type].metadata.id;
+        console.log(' +SD+ response', type, meta_id);
 
         let on_finish = (object_out: any) => {
             this.try_execute_return_func(meta_id, object_out)
