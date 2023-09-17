@@ -15,7 +15,7 @@ export class NodeCrateHandler extends TypedRequestHandler<ServerNode> {
     public handle_request(cl: Client, req: serverRequest) {
         let node_data = this.unpack_data(req.data);
 
-        if (node_data.node_op == FlowOps.CREATE)
+        if (node_data.db_node.node_op == FlowOps.CREATE)
             node_data = this.create_node_on_server(cl, node_data);
 
         req.data = this.pack_data(node_data);

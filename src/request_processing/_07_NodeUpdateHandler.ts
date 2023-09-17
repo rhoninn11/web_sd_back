@@ -17,7 +17,7 @@ export class NodeUpdateHandler extends TypedRequestHandler<ServerNode> {
     public handle_request(cl: Client, req: serverRequest) {
         let node_data = this.unpack_data(req.data);
 
-        if (node_data.node_op == FlowOps.UPDATE)
+        if (node_data.db_node.node_op == FlowOps.UPDATE)
             node_data = this.update_node_on_server(cl, node_data);
 
         req.data = this.pack_data(node_data);

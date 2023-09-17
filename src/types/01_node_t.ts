@@ -40,13 +40,12 @@ export class DBNode {
 
     initial_node_id: number = -1;
     result_data: PromptReference = new PromptReference();
+    node_op: FlowOps = FlowOps.NONE;
 
     timestamp: number = Date.now();
 }
 
 export class ServerNode {
     user_id: number = -1;
-    node_op: FlowOps = FlowOps.NONE;
     db_node: DBNode = new DBNode();
 }
-

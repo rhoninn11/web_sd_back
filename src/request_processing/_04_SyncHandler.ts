@@ -8,63 +8,25 @@ import _, { clone } from 'lodash';
 import sharp from 'sharp';
 import { DBImg } from '../types/03_sd_t';
 import { processRGB2webPng_base64 } from '../image_proc';
+import { SyncHelper } from '../sync_helper';
 
 export class SyncHandler extends TypedRequestHandler<syncSignature> {
+    sync_helper: SyncHelper;
+
     constructor() {
         super();
         this.type = 'sync';
-    }
-
-    private check_with_server(sync_data: syncSignature) {
-        let db_nodes = NodeRepo.getInstance().get_all_nodes().map((node) => node.db_node)
-        let db_edges = EdgeRepo.getInstance().get_all_edges().map((edge) => edge.db_edge)
-        let db_imgs = ImgRepo.getInstance().get_all_imgs()
-        let serv_node_ids = db_nodes.map((node) => node.id.toString())
-        let serv_edge_ids = db_edges.map((edge) => edge.id.toString())
-        let serv_img_ids = db_imgs.map((img) => img.id.toString())
-
-        let client_edge_ids = sync_data.edge_id_arr;
-        let client_node_ids = sync_data.node_id_arr;
-        let client_img_ids = sync_data.img_id_arr;
-
-        // console.log(client_node_ids)
-        // console.log(client_edge_ids)
-        // console.log(client_img_ids)
-
-        // console.log('+++ server nodes (', serv_node_ids.length, ')  <---> client nodes (', client_node_ids.length, ')')
-        // console.log('+++ server edges (', serv_edge_ids.length, ')  <---> client edges (', client_edge_ids.length, ')')
-        // console.log('+++ server imgs (', serv_img_ids.length, ')  <---> client imgs (', client_img_ids.length, ')')
-
-        // console.log(serv_node_ids)
-        // console.log(serv_edge_ids)
-        // console.log(serv_img_ids)
-
-        let nodes_to_sync = _.difference(serv_node_ids, client_node_ids)
-        let edges_to_sync = _.difference(serv_edge_ids, client_edge_ids)
-        let imgs_to_sync = _.difference(serv_img_ids, client_img_ids)
-
-        // console.log('+++ nodes diference')
-        // console.log(nodes_to_sync)
-        // console.log('+++ edges diference')
-        // console.log(edges_to_sync)
-        // console.log('+++ img diference')
-        // console.log(edges_to_sync)
-
-        let new_sync_data = new syncSignature().set_ids(nodes_to_sync, edges_to_sync, imgs_to_sync)
-        new_sync_data.sync_op = syncOps.INFO;
-        return new_sync_data
+        this.sync_helper = new SyncHelper();
     }
 
     private node_realated_transfer(cl: Client, sync_data: syncSignature) {
         let job = new Promise<syncSignature>((resolve, reject) => {
             if (sync_data.node_id_arr.length > 0) {
                 let node_id = sync_data.node_id_arr[0];
-                let node = NodeRepo.getInstance().get_node(node_id);
-                if (node) {
-                    // remove this id from client state
-                    cl.sync_signature.node_id_arr = cl.sync_signature.node_id_arr.filter((id) => id != node_id);
-                    sync_data.node_data_arr.push(node.db_node);
-                }
+                let node = NodeRepo.getInstance().get_node_v2(node_id);
+
+                cl.sync_signature.node_id_arr = cl.sync_signature.node_id_arr.filter((id) => id != node_id);
+                sync_data.node_data_arr.push(node.db_node);
             }
             resolve(sync_data);
         });
@@ -92,12 +54,12 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
         let web_img = new DBImg()
         web_img.id = db_img.id;
 
-        
+
         return processRGB2webPng_base64(db_img.img)
-        .then((png_img) => {
-            web_img.img = png_img;
-            return web_img;
-        })
+            .then((png_img) => {
+                web_img.img = png_img;
+                return web_img;
+            })
     }
 
 
@@ -114,10 +76,10 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
                     // remove this id from client state
                     cl.sync_signature.img_id_arr = cl.sync_signature.img_id_arr.filter((id) => id != db_img_id.toString())
                     this.process_img(db_img)
-                    .then((png_img) => {
-                        sync_data.img_data_arr.push(png_img);
-                        resolve(sync_data);
-                    });
+                        .then((png_img) => {
+                            sync_data.img_data_arr.push(png_img);
+                            resolve(sync_data);
+                        });
                     progress = 1;
                 }
             }
@@ -126,24 +88,80 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
         return job;
     }
 
+    private check_client_sync_state(cl: Client) {
+        if (cl.sync_stage == syncStage.INITIAL_SYNC)
+            if (cl.sync_signature.empty())
+                cl.sync_stage = syncStage.INITIAL_SYNC_DONE;
+
+        if (cl.sync_stage == syncStage.INITIAL_TS_SYNC)
+            if (cl.sync_signature.empty())
+                cl.sync_stage = syncStage.INITIAL_TS_SYNC_DONE;
+
+    }
+
+    private _on_client_transfer(cl: Client, sync_data: syncSignature, req: serverRequest) {
+        let sync_data_out = new syncSignature();
+        
+        return new Promise<syncSignature>((resolve, reject) => resolve(sync_data))
+            .then((sync_data_chain) => this.node_realated_transfer(cl, sync_data_chain))
+            .then((sync_data_chain) => this.edge_realated_transfer(cl, sync_data_chain))
+            .then((sync_data_chain) => this.img_realated_transfer(cl, sync_data_chain))
+            .then((sync_data_chain) => this.img_realated_transfer(cl, sync_data_chain))
+            .then((sync_data_chain) => sync_data_out = sync_data_chain)
+            .then(() => this.check_client_sync_state(cl))
+            .then(() => {
+                req.data = this.pack_data(sync_data_out);
+                send_object(cl, req);
+            });
+    }
+
+    private _on_info(cl: Client, sync_data: syncSignature, req: serverRequest) {
+        return new Promise<syncSignature>((resolve, reject) => resolve(sync_data))
+            .then((sync_data_chain) => this.sync_helper.check_with_server(sync_data_chain))
+            .then((sync_data_chain) => {
+                cl.sync_stage = syncStage.INITIAL_SYNC;
+                cl.sync_signature = sync_data_chain;
+                req.data = this.pack_data(sync_data_chain);
+                send_object(cl, req);
+            })
+    }
+
+    private _on_info_ts(cl: Client, sync_data: syncSignature, req: serverRequest) {
+        console.log('+++ _on_info_ts', cl.sync_signature);
+        if (cl.sync_stage != syncStage.INITIAL_SYNC)
+            return;
+        console.log('+++ progressed');
+
+        return new Promise<syncSignature>((resolve, reject) => resolve(sync_data))
+            .then((sync_data_chain) => this.sync_helper.check_ts_with_server(sync_data_chain))
+            .then((sync_data_chain) => {
+                console.log('+++ i co znaleziono', sync_data_chain);
+                cl.sync_stage = syncStage.INITIAL_TS_SYNC;
+                cl.sync_signature = sync_data_chain;
+                req.data = this.pack_data(sync_data_chain);
+                send_object(cl, req);
+            })
+    }
+
     public handle_request(cl: Client, req: serverRequest) {
         let sync_data = this.unpack_data(req.data);
         if (sync_data.sync_op == syncOps.INFO) {
-            sync_data = this.check_with_server(sync_data);
-            cl.sync_stage = syncStage.INITIAL_SYNC;
-            cl.sync_signature = sync_data;
-            req.data = this.pack_data(sync_data);
-            send_object(cl, req);
+            console.log('+++ syncOps.INFO');
+            this._on_info(cl, sync_data, req)
+            return;
+        }
+        
+        if (sync_data.sync_op == syncOps.TRANSFER) {
+            console.log('+++ syncOps.TRANSFER');
+            this._on_client_transfer(cl, sync_data, req)
+            return;
+        }
+        
+        if (sync_data.sync_op == syncOps.INFO_TS) {
+            console.log('+++ syncOps.INFO_TS');
+            this._on_info_ts(cl, sync_data, req)
+            return;
         }
 
-        if (sync_data.sync_op == syncOps.TRANSFER) {
-            this.node_realated_transfer(cl, sync_data)
-            .then((sync_data_chain) => this.edge_realated_transfer(cl, sync_data_chain))
-            .then((sync_data_chain) => this.img_realated_transfer(cl, sync_data_chain))
-            .then((sync_data_chain) => {
-                req.data = this.pack_data(sync_data_chain);
-                send_object(cl, req);
-            });
-        }
     }
 }

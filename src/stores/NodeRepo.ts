@@ -98,9 +98,40 @@ export class NodeRepo {
         return node_data;
     }
 
+    private select_most_recent_edit(edit_st: NodeEditStructure) {
+        let ts_arr = edit_st.edit_drafts.map((node_edit) => node_edit.db_node.timestamp);
+        let max_ts = Math.max(...ts_arr)
+        let idx = edit_st.edit_drafts.findIndex((node_edit) => {
+            if (node_edit.db_node.timestamp == max_ts)
+                return node_edit;
+        });
+
+        if (idx == -1) 
+            return undefined
+
+        let recent_node_draft = edit_st.edit_drafts[idx];
+        return recent_node_draft;
+    }
+
+
+    public get_node_v2(uuid: string) {
+        let edit_st = this.serv_editable_nodes.find((es) => es.instance.db_node.id.toString() === uuid);
+        if (!edit_st) return new ServerNode();
+
+        let node = edit_st.instance;
+        let draft = this.select_most_recent_edit(edit_st);
+        if (!draft)
+            return node;
+        
+        if (draft.db_node.timestamp > node.db_node.timestamp)
+            node = draft;
+
+        return draft;
+    }
+
     public get_node(uuid: string) {
-        let node = this.serv_editable_nodes.find((es) => es.instance.db_node.id.toString() === uuid)?.instance;
-        return node;
+        let edit_st = this.serv_editable_nodes.find((es) => es.instance.db_node.id.toString() === uuid);
+        return edit_st?.instance;
     }
 
     public get_all_nodes() {

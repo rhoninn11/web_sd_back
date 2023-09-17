@@ -42,6 +42,7 @@ export interface progress_content {
 export enum syncOps {
     NONE = 'none',
     INFO = 'info',
+    INFO_TS = 'info_ts',
     ACCCEPT = 'accept',
     TRANSFER = 'transfer',
     FINISH = 'finish',
@@ -75,5 +76,10 @@ export class syncSignature {
         this.node_data_arr = nodes;
         this.edge_data_arr = edges;
         this.img_data_arr = imgs;
+    }
+
+    empty(){
+        let cond = this.node_id_arr.length == 0 && this.edge_id_arr.length == 0 && this.img_id_arr.length == 0;
+        return cond;
     }
 }
