@@ -34,14 +34,14 @@ export class EdgeStyle {
     stroke: string = DEFAULT_EDGE_COLOR;
 
     set_color(id: number){
-        console.log('!!!set_color', id);
+        // console.log('!!!set_color', id);
         if(id >= 0 && id < EDGE_COLOR_ARR.length){
-            console.log('!!! id', id);
+            // console.log('!!! id', id);
             this.stroke = EDGE_COLOR_ARR[id];
         }
         else{
             this.stroke = DEFAULT_EDGE_COLOR;
-            console.log('!!! default');
+            // console.log('!!! default');
         }
     }
 }

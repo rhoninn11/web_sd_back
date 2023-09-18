@@ -4,9 +4,31 @@ export class PasswordBank {
     private static instance: PasswordBank;
     private constructor() {
         this.password_idx = [
-            { password: 'pulsary50.', inUse: false },
-            { password: 'pulsary51.', inUse: false },
-        ]
+            { password: 'policjantZawodLaskowy51+', inUse: false },
+            { password: 'myszKsztalcenieAgrest80-', inUse: false },
+            { password: 'zukInternetBak39.', inUse: false },
+            { password: 'muzeumRurkaPapier40,', inUse: false },
+            { password: 'filmMyszkaKomputer18+', inUse: false },
+            { password: 'uczenJeziorakKoce36,', inUse: false },
+            { password: 'senatKsiadzUsluga94+', inUse: false },
+            { password: 'szkloPigwaButelka71-', inUse: false },
+            { password: 'slonceKalafiorDziecko85-', inUse: false },
+            { password: 'projektowanieZainteresowanyPlaneta54.', inUse: false },
+            { password: 'polbutyTulipanLuk14+', inUse: false },
+            { password: 'muzykaPszczolaMisja37_', inUse: false },
+            { password: 'rzekaPilkaMrowkojad98+', inUse: false },
+            { password: 'ksiezniczkaKwiaciarniaGazeta31-', inUse: false },
+            { password: 'naturaRehabilitacjaPrzyjaciel46,', inUse: false },
+            { password: 'orzelRodzynkiHomar65-', inUse: false },
+            { password: 'koszulkaPanterKoncert63,', inUse: false },
+            { password: 'mostZakupyKreatywnosc22+', inUse: false },
+            { password: 'panteraFigiReka44.', inUse: false },
+            { password: 'celowoscSmutnyBillboard91.', inUse: false },
+            { password: 'klientPostRobak71+', inUse: false },
+            { password: 'rekawiczkiKameraSklep88-', inUse: false },
+            { password: 'klompyKosciolRealizacja63+', inUse: false },
+            { password: 'wystawaSpoleczenstwoIndyk94,', inUse: false }
+        ];
      }
 
     public static getInstance(): PasswordBank {
