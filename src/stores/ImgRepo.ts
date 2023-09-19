@@ -63,7 +63,7 @@ export class ImgRepo {
 
     public get_img(uuid: string) {
         let img = this.images.find((img) => {
-            console.log(`+++ ${img.id.toString()} === ${uuid}`)
+            // console.log(`+++ ${img.id.toString()} === ${uuid}`)
             return img.id.toString() === uuid
         });
         return img;

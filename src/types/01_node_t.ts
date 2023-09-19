@@ -5,6 +5,7 @@ import { promptConfig } from "./03_sd_t";
 
 export class PromptReference {
     prompt: promptConfig = new promptConfig();
+    prompt_finished: boolean = false;
     prompt_img_id: number = -1;
 }
 
@@ -13,6 +14,7 @@ export interface NodeData {
     user_id: number;
     initial_node_id: number;
     result_data: PromptReference;
+    counter: number;
 }
 
 interface NodeCallbacks {

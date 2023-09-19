@@ -22,8 +22,11 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
     private node_realated_transfer(cl: Client, sync_data: syncSignature) {
         let job = new Promise<syncSignature>((resolve, reject) => {
             if (sync_data.node_id_arr.length > 0) {
+                console.log('+++ node realated transfer');
                 let node_id = sync_data.node_id_arr[0];
                 let node = NodeRepo.getInstance().get_node_v2(node_id);
+                console.log(`+S_TRANS+ node ${node?.db_node.id}`);
+
 
                 cl.sync_signature.node_id_arr = cl.sync_signature.node_id_arr.filter((id) => id != node_id);
                 sync_data.node_data_arr.push(node.db_node);
@@ -36,11 +39,14 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
     private edge_realated_transfer(cl: Client, sync_data: syncSignature) {
         let job = new Promise<syncSignature>((resolve, reject) => {
             if (sync_data.edge_id_arr.length > 0) {
-                let node_id = sync_data.edge_id_arr[0]
-                let edge = EdgeRepo.getInstance().get_edge(node_id)
+                console.log('+++ edge realated transfer');
+                let edge_id = sync_data.edge_id_arr[0]
+                let edge = EdgeRepo.getInstance().get_edge(edge_id)
+                console.log(`+S_TRANS+ edge ${edge?.db_edge.id}`);
                 if (edge) {
+                    console.log(`+S_TRANS+ removing`);
                     // remove this id from client state
-                    cl.sync_signature.node_id_arr = cl.sync_signature.node_id_arr.filter((id) => id != node_id)
+                    cl.sync_signature.edge_id_arr = cl.sync_signature.edge_id_arr.filter((id) => id != edge_id)
                     sync_data.edge_data_arr.push(edge.db_edge)
                 }
             }
@@ -70,7 +76,7 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
                 console.log('+++ img realated transfer');
                 let node_id = sync_data.img_id_arr[0]
                 let db_img = ImgRepo.getInstance().get_img(node_id)
-                console.log(`+++ db_img ${db_img}`);
+                console.log(`+S_TRANS+ img ${db_img?.id}`);
                 if (db_img) {
                     let db_img_id = db_img.id
                     // remove this id from client state
@@ -89,13 +95,21 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
     }
 
     private check_client_sync_state(cl: Client) {
-        if (cl.sync_stage == syncStage.INITIAL_SYNC)
-            if (cl.sync_signature.empty())
+        console.log('+I+ check', cl.sync_signature.empty(), cl.sync_stage);
+        if (cl.sync_stage == syncStage.INITIAL_SYNC){
+            if (cl.sync_signature.empty()){
+                console.log('+I+ internal swith');
                 cl.sync_stage = syncStage.INITIAL_SYNC_DONE;
+            }
+        }
+        
+        if (cl.sync_stage == syncStage.TS_SYNC){
+            if (cl.sync_signature.empty()){
+                console.log('+TS+ internal swith');
+                cl.sync_stage = syncStage.TS_SYNC_DONE;
 
-        if (cl.sync_stage == syncStage.INITIAL_TS_SYNC)
-            if (cl.sync_signature.empty())
-                cl.sync_stage = syncStage.INITIAL_TS_SYNC_DONE;
+            }
+        }
 
     }
 
@@ -105,7 +119,6 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
         return new Promise<syncSignature>((resolve, reject) => resolve(sync_data))
             .then((sync_data_chain) => this.node_realated_transfer(cl, sync_data_chain))
             .then((sync_data_chain) => this.edge_realated_transfer(cl, sync_data_chain))
-            .then((sync_data_chain) => this.img_realated_transfer(cl, sync_data_chain))
             .then((sync_data_chain) => this.img_realated_transfer(cl, sync_data_chain))
             .then((sync_data_chain) => sync_data_out = sync_data_chain)
             .then(() => this.check_client_sync_state(cl))
@@ -121,23 +134,27 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
             .then((sync_data_chain) => {
                 cl.sync_stage = syncStage.INITIAL_SYNC;
                 cl.sync_signature = sync_data_chain;
+                this.check_client_sync_state(cl);
                 req.data = this.pack_data(sync_data_chain);
                 send_object(cl, req);
             })
     }
 
     private _on_info_ts(cl: Client, sync_data: syncSignature, req: serverRequest) {
-        console.log('+++ _on_info_ts', cl.sync_signature);
-        if (cl.sync_stage != syncStage.INITIAL_SYNC)
+        console.log('+TS+ internal sygn', cl.sync_signature, cl.sync_stage);
+        if (cl.sync_stage != syncStage.INITIAL_SYNC_DONE){
+            console.log('+TS+ not allowed');   
             return;
-        console.log('+++ progressed');
-
+        }
+        
+        console.log('+TS+ allowed', sync_data.node_id_arr);
         return new Promise<syncSignature>((resolve, reject) => resolve(sync_data))
             .then((sync_data_chain) => this.sync_helper.check_ts_with_server(sync_data_chain))
             .then((sync_data_chain) => {
-                console.log('+++ i co znaleziono', sync_data_chain);
-                cl.sync_stage = syncStage.INITIAL_TS_SYNC;
+                console.log('+TS+ i co znaleziono', sync_data_chain);
+                cl.sync_stage = syncStage.TS_SYNC;
                 cl.sync_signature = sync_data_chain;
+                this.check_client_sync_state(cl);
                 req.data = this.pack_data(sync_data_chain);
                 send_object(cl, req);
             })
