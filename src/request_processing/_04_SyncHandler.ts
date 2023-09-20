@@ -96,7 +96,7 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
     }
 
     private check_client_sync_state(cl: Client) {
-        console.log('+I+ check', cl.sync_signature.empty(), cl.sync_stage);
+        // console.log('+I+ check', cl.sync_signature.empty(), cl.sync_stage);
         if (cl.sync_stage == syncStage.INITIAL_SYNC){
             if (cl.sync_signature.empty()){
                 // console.log('+I+ internal swith');

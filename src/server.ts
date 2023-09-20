@@ -20,7 +20,7 @@ import path from 'path';
 
 const handle_message = (cl: Client, message: any, sd: SDClient) => {
 	let msg: serverRequest = JSON.parse(message);
-	console.log('+SERV+ received message', msg.type);
+	// console.log('+SERV+ received message', msg.type);
 	HandlerRepository.getInstance()?.get_handler(msg.type)?.handle_request(cl, msg);
 }
 
