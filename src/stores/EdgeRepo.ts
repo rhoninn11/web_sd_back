@@ -1,5 +1,6 @@
 import { DBStore, DBRecord } from "./DBStore";
 import { ServerEdge } from "../types/04_edge_t";
+import { Syncer } from "../Syncer";
 
 export class EdgeRepo {
     
@@ -35,6 +36,7 @@ export class EdgeRepo {
         edge_data.db_edge.id = new_edge_id;
         this.serv_edges.push(edge_data);
         this.DBStore?.insert_edge(new_edge_id.toString(), JSON.stringify(edge_data));
+        Syncer.getInstance().edge_to_sync(new_edge_id, edge_data.db_edge.user_id);
         return edge_data;
     }
 

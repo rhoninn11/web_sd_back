@@ -1,3 +1,4 @@
+import { Syncer } from "../Syncer";
 import { DBImg, img64 } from "../types/03_sd_t";
 import { DBRecord, DBStore} from "./DBStore";
 
@@ -41,19 +42,22 @@ export class ImgRepo {
 
     public async _fetch_images() {
         let images = await this.DBStore?.get_images();
-        // console.log('+++ images fetched')
-        // console.log(images)
-        if (images) this.images = images.map((db_record) => fromDBRecord(db_record));
+        if (images) 
+            this.images = images;
 
     }
 
-    public insert_image(new_img: img64) {
+    public insert_image(new_db_img: DBImg) {
         let img_id = this.images.length;
-        new_img.id = img_id;
+        new_db_img.id = img_id;
+        new_db_img.img.id = img_id;
         
-        this.images.push(new DBImg().from(new_img));
-        this.DBStore?.insert_image(img_id.toString(), JSON.stringify(new_img));
-        return new_img
+
+        
+        this.images.push(new_db_img);
+        this.DBStore?.insert_image(img_id.toString(), JSON.stringify(new_db_img));
+        Syncer.getInstance().img_to_sync(img_id, new_db_img.user_id);
+        return new_db_img
     }
 
     

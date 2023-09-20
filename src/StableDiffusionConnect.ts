@@ -1,12 +1,13 @@
 import net from 'net';
 
 import { connectMsg, disconnectMsg } from './types/types_sd';
-import { img2img, img64 } from './types/03_sd_t';
+import { DBImg, img2img, img64 } from './types/03_sd_t';
 import { SDComUtils } from './SDComUtils';
 
 import { ImgRepo } from './stores/ImgRepo';
 import { processRGB2webPng_base64 } from './image_proc';
 import { txt2img } from './types/03_sd_t';
+import { mtdta_JSON_id } from './types/02_serv_t';
 
 
 class SegmentationProcessor {
@@ -91,16 +92,21 @@ export class SDClient {
     }
 
     process_img_result(object_in: any, decoded_data: any, on_finish: (object_out: any) => void) {
-
+        let metadata_id = decoded_data[object_in.type].metadata.id;
         let img64: img64 = decoded_data[object_in.type].bulk.img;
-        let rgb_img = ImgRepo.getInstance().insert_image(img64);
+        
+        let mtdta_id_st: mtdta_JSON_id = JSON.parse(metadata_id);
+        
+        let db_img = new DBImg;
+        db_img.from(img64);
+        db_img.user_id = mtdta_id_st.user_id;
+        let db_rgb_img = ImgRepo.getInstance().insert_image(db_img);
 
-        processRGB2webPng_base64(rgb_img).then((png_img) => {
+        processRGB2webPng_base64(db_rgb_img.img).then((png_img) => {
             decoded_data[object_in.type].bulk.img = png_img;
             object_in.data = JSON.stringify(decoded_data);
             on_finish(object_in)
         })
-
     }
 
     private pass_object_back(object: any) {

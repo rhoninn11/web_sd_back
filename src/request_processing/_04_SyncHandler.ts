@@ -9,6 +9,7 @@ import sharp from 'sharp';
 import { DBImg } from '../types/03_sd_t';
 import { processRGB2webPng_base64 } from '../image_proc';
 import { SyncHelper } from '../sync_helper';
+import { Syncer } from '../Syncer';
 
 export class SyncHandler extends TypedRequestHandler<syncSignature> {
     sync_helper: SyncHelper;
@@ -106,8 +107,16 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
         if (cl.sync_stage == syncStage.TS_SYNC){
             if (cl.sync_signature.empty()){
                 console.log('+TS+ internal swith');
-                cl.sync_stage = syncStage.TS_SYNC_DONE;
+                cl.sync_stage = syncStage.SYNCED;
+                Syncer.getInstance().client_ready_to_sync(cl);
+            }
+        }
 
+        if (cl.sync_stage == syncStage.RT_SYNC){
+            if (cl.sync_signature.empty()){
+                // console.log('+TS+ internal swith');
+                cl.sync_stage = syncStage.SYNCED;
+                Syncer.getInstance().client_ready_to_sync(cl);
             }
         }
 
@@ -141,23 +150,42 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
     }
 
     private _on_info_ts(cl: Client, sync_data: syncSignature, req: serverRequest) {
-        console.log('+TS+ internal sygn', cl.sync_signature, cl.sync_stage);
+        // console.log('+TS+ internal sygn', cl.sync_signature, cl.sync_stage);
         if (cl.sync_stage != syncStage.INITIAL_SYNC_DONE){
-            console.log('+TS+ not allowed');   
+            // console.log('+TS+ not allowed');   
             return;
         }
         
-        console.log('+TS+ allowed', sync_data.node_id_arr);
+        // console.log('+TS+ allowed', sync_data.node_id_arr);
         return new Promise<syncSignature>((resolve, reject) => resolve(sync_data))
             .then((sync_data_chain) => this.sync_helper.check_ts_with_server(sync_data_chain))
             .then((sync_data_chain) => {
-                console.log('+TS+ i co znaleziono', sync_data_chain);
+                // console.log('+TS+ i co znaleziono', sync_data_chain);
                 cl.sync_stage = syncStage.TS_SYNC;
                 cl.sync_signature = sync_data_chain;
                 this.check_client_sync_state(cl);
                 req.data = this.pack_data(sync_data_chain);
                 send_object(cl, req);
             })
+    }
+
+    private _on_rt_sync(cl: Client, req: serverRequest) {
+        if (cl.sync_stage != syncStage.SYNCED){
+            // console.log('+RT+ not allowed');
+            return;
+        }
+
+        return new Promise<void>((resolve, reject) => resolve())
+            .then(() => {
+                let rt_sygn = Syncer.getInstance().get_sync_data_for_client(cl);
+                rt_sygn.sync_op = syncOps.RT_SYNC;
+                cl.sync_stage = syncStage.RT_SYNC;
+                cl.sync_signature = rt_sygn;
+                this.check_client_sync_state(cl);
+                req.data = this.pack_data(rt_sygn);
+                send_object(cl, req);
+            })
+        
     }
 
     public handle_request(cl: Client, req: serverRequest) {
@@ -177,6 +205,12 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
         if (sync_data.sync_op == syncOps.INFO_TS) {
             console.log('+++ syncOps.INFO_TS');
             this._on_info_ts(cl, sync_data, req)
+            return;
+        }
+
+        if (sync_data.sync_op == syncOps.RT_SYNC) {
+            console.log('+++ syncOps.RT_SYNC');
+            this._on_rt_sync(cl, req)
             return;
         }
 

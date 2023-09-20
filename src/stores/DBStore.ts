@@ -1,6 +1,7 @@
 import sql, { Database } from 'sqlite3'
 import { ServerEdge } from '../types/04_edge_t';
 import { ServerNode } from '../types/01_node_t';
+import { DBImg } from '../types/03_sd_t';
 
 const DB_FILE = 'tmp/db.sqlite3';
 
@@ -140,9 +141,10 @@ export class DBStore {
         });
 
         let images = await call.then((db_data) => db_data as DBRecord[]);
+        let parsed_images = images.map((edge) => JSON.parse(edge.json) as DBImg);
         console.log(`+++ db has ${images.length} images`);
 
-        return images;
+        return parsed_images;
     }
 
     public exit() {

@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Client } from '../types/types';
 import { SDClient } from '../StableDiffusionConnect';
-import { serverRequest } from '../types/02_serv_t';
+import { mtdta_JSON_id, serverRequest } from '../types/02_serv_t';
 import { TypedRequestHandler, send_object } from './RequestHandler';
 import { txt2img } from '../types/03_sd_t';
 
@@ -24,8 +24,9 @@ export class Txt2imgHandler extends TypedRequestHandler<txt2img> {
             return;
 
         let img_data: txt2img = this.unpack_data(req.data);
-        img_data.txt2img.metadata.id = uuidv4();
-
+        let unique_id = new mtdta_JSON_id(uuidv4(), cl.auth_id);
+        img_data.txt2img.metadata.id = JSON.stringify(unique_id);
+        console.log('+T2I+ txt2img');
         let lazy_response = (sd_response: any) => {
             // sd response is almost the same as server request just id is missing
             sd_response.id = req.id;

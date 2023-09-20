@@ -20,6 +20,7 @@ export class promptConfig {
     prompt_negative: string = '';
     seed: number = 0;
     samples: number = 1;
+    power: number = 1;
 }
 
 export class txt2img_content {
@@ -38,6 +39,7 @@ export class img2img {
 
 export class DBImg {
     id: number = -1;
+    user_id: number = -1;
     img: img64 = new img64();
 
     from(img: img64){

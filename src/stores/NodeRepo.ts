@@ -1,6 +1,7 @@
 import { DBStore, DBRecord } from "./DBStore";
 import { ServerNode } from "../types/01_node_t";
 import { v4 as uuid } from 'uuid';
+import { Syncer } from "../Syncer";
 
 
 class NodeEditStructure {
@@ -89,12 +90,27 @@ export class NodeRepo {
         }
     }
 
+    private _node_to_sync(node_id: number, owner_id: number) {
+        Syncer.getInstance().node_to_sync(node_id, owner_id);
+    }
 
     public insert_node(node_data: ServerNode) {
         let new_node_id = this.serv_editable_nodes.length;
         node_data.db_node.id = new_node_id;
+
         this.serv_editable_nodes.push(this.base_edit_Structure_of_node(node_data));
         this.DBStore?.insert_node(new_node_id.toString(), JSON.stringify(node_data));
+        this._node_to_sync(node_data.db_node.id, node_data.db_node.user_id)
+        return node_data;
+    }
+
+    // rename do not work properly... TODO: rename to insert_node_edit
+    public edit_node(node_data: ServerNode) {
+        let nes = this.serv_editable_nodes.filter((es) => es.instance.db_node.id === node_data.db_node.id);
+        nes.forEach((es) => es.edit_drafts.push(node_data));
+        
+        this.DBStore?.insert_edit(uuid(), JSON.stringify(node_data));
+        this._node_to_sync(node_data.db_node.id, node_data.db_node.user_id)
         return node_data;
     }
 
@@ -138,11 +154,5 @@ export class NodeRepo {
         return this.serv_editable_nodes.map((node) => node.instance);
     }
 
-    public edit_node(node_data: ServerNode) {
-        let nes = this.serv_editable_nodes.filter((es) => es.instance.db_node.id === node_data.db_node.id);
-        nes.forEach((es) => es.edit_drafts.push(node_data));
-        
-        this.DBStore?.insert_edit(uuid(), JSON.stringify(node_data));
-        return node_data;
-    }
+
 }

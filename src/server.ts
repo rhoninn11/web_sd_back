@@ -45,23 +45,23 @@ const exit_related = (sd: SDClient, db: DBStore) => {
 	});
 }
 
-// const express_related = (port: number) => {
-// 	const app = express();
+const express_related = (port: number) => {
+	const app = express();
     
-//     // Serve static files from a "public" folder
-//     app.use(express.static('public'));
+    // Serve static files from a "public" folder
+    app.use(express.static('public'));
 
-//     // Serve index.html when someone accesses the root URL
-//     app.get('/', (req, res) => {
-//         res.sendFile(path.join(__dirname, 'public/index.html'));
-//     });
+    // Serve index.html when someone accesses the root URL
+    app.get('/', (req, res) => {
+        res.sendFile(path.join(__dirname, 'public/index.html'));
+    });
 
-//     // Attach WebSocket server to the same HTTP server
-//     const server = app.listen(port, () => {
-//         console.log(`Server started on http://localhost:${port}`);
-//     });
-// 	return server
-// }
+    // Attach WebSocket server to the same HTTP server
+    const server = app.listen(port, () => {
+        console.log(`Server started on http://localhost:${port}`);
+    });
+	return server
+}
 
 const backend_server = async () => {
 	let port = 8700;
@@ -81,10 +81,8 @@ const backend_server = async () => {
 	sd.connect(sd_port, '127.0.0.1');
 	handRepositoryInit(sd)
 
-	// const server = express_related(port)
-	// const wss = new WebSocket.Server({ server });
-	
-	const wss = new WebSocket.Server({ port: port });
+	const server = express_related(port)
+	const wss = new WebSocket.Server({ server });
 	wss.on('connection', (ws) => {
 		const new_client = ClientStore.getInstance().add_client(ws);
 		ws.on('close', () => ClientStore.getInstance().remove_client(new_client));

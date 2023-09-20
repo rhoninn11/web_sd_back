@@ -43,9 +43,8 @@ export enum syncOps {
     NONE = 'none',
     INFO = 'info',
     INFO_TS = 'info_ts',
-    ACCCEPT = 'accept',
+    RT_SYNC = 'rt_sync',
     TRANSFER = 'transfer',
-    FINISH = 'finish',
 }
 
 export class syncSignature {
@@ -81,5 +80,15 @@ export class syncSignature {
     empty(){
         let cond = this.node_id_arr.length == 0 && this.edge_id_arr.length == 0 && this.img_id_arr.length == 0;
         return cond;
+    }
+}
+
+export class mtdta_JSON_id {
+    uuid: string = '';
+    user_id: number = -1;
+
+    constructor(uuid: string, user_id: number){
+        this.uuid = uuid;
+        this.user_id = user_id;
     }
 }

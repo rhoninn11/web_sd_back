@@ -1,6 +1,7 @@
 import WebSocket from 'ws';
 import { Client } from './types/types';
 import { PasswordBank } from './PasswordBank';
+import { Syncer } from './Syncer';
 
 export class ClientStore {
     private clients_idx: Client[];
@@ -27,6 +28,7 @@ export class ClientStore {
         const index = this.clients_idx.indexOf(cl);
         if (index !== -1) {
             PasswordBank.getInstance().release_password(cl.auth_id)
+            Syncer.getInstance().client_leave_sync(cl);
             this.clients_idx.splice(index, 1);
         }
         console.log('<+++> Client disconnected!');

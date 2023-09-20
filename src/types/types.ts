@@ -6,9 +6,8 @@ export enum syncStage {
 	INITIAL_SYNC = "init_sync",
 	INITIAL_SYNC_DONE = "init_sync_done",
 	TS_SYNC = "ts_sync",
-	TS_SYNC_DONE = "ts_sync_done",
 	SYNCED = "synced",
-	UPDATE = "update",
+	RT_SYNC = "rt_sync",
 }
 
 export class Client {
