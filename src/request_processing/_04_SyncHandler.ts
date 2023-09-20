@@ -23,10 +23,10 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
     private node_realated_transfer(cl: Client, sync_data: syncSignature) {
         let job = new Promise<syncSignature>((resolve, reject) => {
             if (sync_data.node_id_arr.length > 0) {
-                console.log('+++ node realated transfer');
+                // console.log('+++ node realated transfer');
                 let node_id = sync_data.node_id_arr[0];
                 let node = NodeRepo.getInstance().get_node_v2(node_id);
-                console.log(`+S_TRANS+ node ${node?.db_node.id}`);
+                // console.log(`+S_TRANS+ node ${node?.db_node.id}`);
 
 
                 cl.sync_signature.node_id_arr = cl.sync_signature.node_id_arr.filter((id) => id != node_id);
@@ -40,12 +40,12 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
     private edge_realated_transfer(cl: Client, sync_data: syncSignature) {
         let job = new Promise<syncSignature>((resolve, reject) => {
             if (sync_data.edge_id_arr.length > 0) {
-                console.log('+++ edge realated transfer');
+                // console.log('+++ edge realated transfer');
                 let edge_id = sync_data.edge_id_arr[0]
                 let edge = EdgeRepo.getInstance().get_edge(edge_id)
-                console.log(`+S_TRANS+ edge ${edge?.db_edge.id}`);
+                // console.log(`+S_TRANS+ edge ${edge?.db_edge.id}`);
                 if (edge) {
-                    console.log(`+S_TRANS+ removing`);
+                    // console.log(`+S_TRANS+ removing`);
                     // remove this id from client state
                     cl.sync_signature.edge_id_arr = cl.sync_signature.edge_id_arr.filter((id) => id != edge_id)
                     sync_data.edge_data_arr.push(edge.db_edge)
@@ -74,10 +74,10 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
         let job = new Promise<syncSignature>((resolve, reject) => {
             let progress = 0;
             if (sync_data.img_id_arr.length > 0) {
-                console.log('+++ img realated transfer');
+                // console.log('+++ img realated transfer');
                 let node_id = sync_data.img_id_arr[0]
                 let db_img = ImgRepo.getInstance().get_img(node_id)
-                console.log(`+S_TRANS+ img ${db_img?.id}`);
+                // console.log(`+S_TRANS+ img ${db_img?.id}`);
                 if (db_img) {
                     let db_img_id = db_img.id
                     // remove this id from client state
@@ -99,14 +99,14 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
         console.log('+I+ check', cl.sync_signature.empty(), cl.sync_stage);
         if (cl.sync_stage == syncStage.INITIAL_SYNC){
             if (cl.sync_signature.empty()){
-                console.log('+I+ internal swith');
+                // console.log('+I+ internal swith');
                 cl.sync_stage = syncStage.INITIAL_SYNC_DONE;
             }
         }
         
         if (cl.sync_stage == syncStage.TS_SYNC){
             if (cl.sync_signature.empty()){
-                console.log('+TS+ internal swith');
+                // console.log('+TS+ internal swith');
                 cl.sync_stage = syncStage.SYNCED;
                 Syncer.getInstance().client_ready_to_sync(cl);
             }
@@ -191,25 +191,25 @@ export class SyncHandler extends TypedRequestHandler<syncSignature> {
     public handle_request(cl: Client, req: serverRequest) {
         let sync_data = this.unpack_data(req.data);
         if (sync_data.sync_op == syncOps.INFO) {
-            console.log('+++ syncOps.INFO');
+            // console.log('+++ syncOps.INFO');
             this._on_info(cl, sync_data, req)
             return;
         }
         
         if (sync_data.sync_op == syncOps.TRANSFER) {
-            console.log('+++ syncOps.TRANSFER');
+            // console.log('+++ syncOps.TRANSFER');
             this._on_client_transfer(cl, sync_data, req)
             return;
         }
         
         if (sync_data.sync_op == syncOps.INFO_TS) {
-            console.log('+++ syncOps.INFO_TS');
+            // console.log('+++ syncOps.INFO_TS');
             this._on_info_ts(cl, sync_data, req)
             return;
         }
 
         if (sync_data.sync_op == syncOps.RT_SYNC) {
-            console.log('+++ syncOps.RT_SYNC');
+            // console.log('+++ syncOps.RT_SYNC');
             this._on_rt_sync(cl, req)
             return;
         }
