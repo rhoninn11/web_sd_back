@@ -38,7 +38,9 @@ export class Img2imgHandler extends TypedRequestHandler<img2img> {
 
         let img_data: img2img = this.unpack_data(req.data);
 
-        let unique_id = new mtdta_JSON_id(uuidv4(), cl.auth_id);
+        let mtd_id: mtdta_JSON_id = JSON.parse(img_data.img2img.metadata.id);
+        let unique_id = new mtdta_JSON_id(uuidv4(), cl.auth_id, mtd_id.node_id);
+        
         img_data.img2img.metadata.id = JSON.stringify(unique_id);
 
         let img_data_full = this.fetch_img_for(img_data);

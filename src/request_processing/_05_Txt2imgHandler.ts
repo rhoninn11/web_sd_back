@@ -24,7 +24,8 @@ export class Txt2imgHandler extends TypedRequestHandler<txt2img> {
             return;
 
         let img_data: txt2img = this.unpack_data(req.data);
-        let unique_id = new mtdta_JSON_id(uuidv4(), cl.auth_id);
+        let mtd_id: mtdta_JSON_id = JSON.parse(img_data.txt2img.metadata.id);
+        let unique_id = new mtdta_JSON_id(uuidv4(), cl.auth_id, mtd_id.node_id);
         img_data.txt2img.metadata.id = JSON.stringify(unique_id);
         console.log('+T2I+ txt2img');
         let lazy_response = (sd_response: any) => {

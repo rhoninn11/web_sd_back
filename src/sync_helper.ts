@@ -40,7 +40,7 @@ export class SyncHelper {
         let edges_to_sync = _.difference(serv_edge_ids, client_edge_ids)
         let imgs_to_sync = _.difference(serv_img_ids, client_img_ids)
 
-        let new_sync_data = new syncSignature().set_ids(nodes_to_sync, edges_to_sync, imgs_to_sync)
+        let new_sync_data = new syncSignature()._set_ids(nodes_to_sync, edges_to_sync, imgs_to_sync)
         new_sync_data.sync_op = syncOps.INFO;
         return new_sync_data
     }

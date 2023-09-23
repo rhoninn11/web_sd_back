@@ -15,8 +15,10 @@ import { HandlerRepository } from './request_processing/HandlerRepository';
 import _, { clone } from 'lodash';
 
 import express from 'express';
+import https from 'https';
+import http from 'http';
 import path from 'path';
-
+import fs from "fs"
 
 const handle_message = (cl: Client, message: any, sd: SDClient) => {
 	let msg: serverRequest = JSON.parse(message);
@@ -45,21 +47,32 @@ const exit_related = (sd: SDClient, db: DBStore) => {
 	});
 }
 
+const is_dev = () => {
+	const args = process.argv.slice(2);
+	const isDev = args.includes("dev");
+	return isDev;
+}
+
+const spawn_server = (app: any) => {
+	if (is_dev())
+		return http.createServer(app);
+
+	const privateKey = fs.readFileSync('tmp/private-key.pem', 'utf8');
+	const certificate = fs.readFileSync('tmp/certificate.pem', 'utf8');
+	const credentials = { key: privateKey, cert: certificate };
+
+	return https.createServer(credentials, app);
+}
+
 const express_related = (port: number) => {
 	const app = express();
-    
-    // Serve static files from a "public" folder
     app.use(express.static('public'));
+    app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/index.html')) );
 
-    // Serve index.html when someone accesses the root URL
-    app.get('/', (req, res) => {
-        res.sendFile(path.join(__dirname, 'public/index.html'));
-    });
-
-    // Attach WebSocket server to the same HTTP server
-    const server = app.listen(port, () => {
-        console.log(`Server started on http://localhost:${port}`);
-    });
+	const start_info = `+++ server started on ${is_dev()? "http": "https"}://localhost:${port}`
+	
+	const server = spawn_server(app);
+    server.listen(port, () => console.log(start_info));
 	return server
 }
 
@@ -89,29 +102,8 @@ const backend_server = async () => {
 		ws.on('message', (message: any) => handle_message(new_client, message, sd));
 	});
 
-	console.log(`Server started on ws://localhost:${port}`);
+	console.log(`+++ server started on ${is_dev()? "ws": "wss"}://localhost:${port}`);
 	exit_related(sd, db);
 }
 
-
-const test_fields = () => {
-	
-	let que: number = 1;
-	let wer: number = 2;
-	let ert: number = 3;
-
-	let sample = {
-		qwe: que,
-		wer: wer,
-		ert: ert
-	}
-
-	let a = ["qwe", "wer", "ert"]
-	a.forEach((key) => {
-		let elo: number = (sample as any)[key]
-		console.log(key, elo);
-	})
-}
-
 backend_server();
-// test_fields();

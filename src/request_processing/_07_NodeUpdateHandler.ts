@@ -30,7 +30,7 @@ export class NodeUpdateHandler extends TypedRequestHandler<ServerNode> {
         node_data.db_node.timestamp = Date.now();
         let server_curated_node_edit = node_repo.edit_node(node_data);
         
-        console.log('+++ snode updated: ', server_curated_node_edit.db_node.id);
+        // console.log('+++ snode updated: ', server_curated_node_edit.db_node.id);
         return server_curated_node_edit;
     }
 

@@ -8,6 +8,9 @@ import { ImgRepo } from './stores/ImgRepo';
 import { processRGB2webPng_base64 } from './image_proc';
 import { txt2img } from './types/03_sd_t';
 import { mtdta_JSON_id } from './types/02_serv_t';
+import _, { List } from 'lodash';
+import { NodeRepo } from './stores/NodeRepo';
+import { FlowOps } from './types/00_flow_t';
 
 
 class SegmentationProcessor {
@@ -15,27 +18,50 @@ class SegmentationProcessor {
     private reciveing_buffer: Buffer = Buffer.alloc(0);
     private reciveing_len: number = 0;
 
-    public process(data: Buffer) {
-        if (this.is_reciveing) {
-            this.reciveing_buffer = Buffer.concat([this.reciveing_buffer, data]);
-        }
+    private try_start_reciving(data: Buffer){
+        if (this.is_reciveing)
+            return;
 
-        if (!this.is_reciveing) {
+        this.reciveing_buffer = Buffer.concat([this.reciveing_buffer, data]);
+        if(this.reciveing_buffer.length >= 4){
             this.is_reciveing = true;
-            this.reciveing_buffer = Buffer.alloc(0);
-            this.reciveing_buffer = Buffer.concat([this.reciveing_buffer, data]);
-            this.reciveing_len = data.readUInt32LE(0) + 4;
+            this.reciveing_len = this.reciveing_buffer.readUInt32LE(0) + 4;
         }
+    }
 
-        if (this.reciveing_buffer.byteLength === this.reciveing_len) {
-            this.is_reciveing = false;
+    private try_continue_reiving(data: Buffer){
+        if (!this.is_reciveing)
+            return;
 
-            let u_data = SDComUtils.unwrap_data(this.reciveing_buffer)
-            let obj = SDComUtils.bytes2json2obj(u_data);
-            return obj;
-        }
+        this.reciveing_buffer = Buffer.concat([this.reciveing_buffer, data]);
+    }
 
-        return undefined
+    private try_finalize_packet(): Array<any>{
+        if (this.reciveing_buffer.byteLength < this.reciveing_len || !this.is_reciveing)
+            return [];
+        
+        let prev_msg = this.reciveing_buffer.subarray(0, this.reciveing_len)
+        let rest_of_data = this.reciveing_buffer.subarray(this.reciveing_len)
+        // console.log("+++ packet finished: ", prev_msg.length, ", next packet: ", rest_of_data.length, ", total: ", this.reciveing_buffer.length);
+
+        let u_data = SDComUtils.unwrap_data(prev_msg)
+        let ceratin_messages = [SDComUtils.bytes2json2obj(u_data)];
+
+        this.is_reciveing = false;
+        this.reciveing_buffer = rest_of_data;
+
+        let possible_messages = this.process(Buffer.alloc(0))
+        ceratin_messages.concat(possible_messages)
+
+        return ceratin_messages;
+    }
+
+    public process(data: Buffer) {
+        this.try_continue_reiving(data);
+        this.try_start_reciving(data);
+
+        let return_objs = this.try_finalize_packet();
+        return return_objs;
     }
 }
 
@@ -91,6 +117,8 @@ export class SDClient {
             return_func(data);
     }
 
+
+
     process_img_result(object_in: any, decoded_data: any, on_finish: (object_out: any) => void) {
         let metadata_id = decoded_data[object_in.type].metadata.id;
         let img64: img64 = decoded_data[object_in.type].bulk.img;
@@ -101,6 +129,14 @@ export class SDClient {
         db_img.from(img64);
         db_img.user_id = mtdta_id_st.user_id;
         let db_rgb_img = ImgRepo.getInstance().insert_image(db_img);
+
+        let latest_node = NodeRepo.getInstance().get_node_v2(mtdta_id_st.node_id.toString())
+        let node_copy = _.cloneDeep(latest_node);
+        node_copy.db_node.timestamp = Date.now();
+        node_copy.db_node.result_data.prompt_img_id = db_rgb_img.id;
+        node_copy.db_node.result_data.prompt_img_type = object_in.type;
+        node_copy.db_node.node_op = FlowOps.SERVER_SIDE_UPDATE
+        NodeRepo.getInstance().edit_node(node_copy)
 
         processRGB2webPng_base64(db_rgb_img.img).then((png_img) => {
             decoded_data[object_in.type].bulk.img = png_img;
@@ -119,7 +155,7 @@ export class SDClient {
         let decoded = JSON.parse(encoded);
         // meaby adopt serverRequest to id available before decode stage
         let meta_id = decoded[type].metadata.id;
-        console.log(' +SD+ response', type, meta_id);
+        // console.log(' +SD+ response', type, meta_id);
 
         let on_finish = (object_out: any) => {
             this.try_execute_return_func(meta_id, object_out)
@@ -134,9 +170,10 @@ export class SDClient {
     }
 
     private _data_processing(data: Buffer) {
-        let compleate_object = this.seg_proc.process(data);
-        if (compleate_object)
-            this.pass_object_back(compleate_object);
+        let compleate_objects = this.seg_proc.process(data);
+        compleate_objects.forEach(element => {
+            this.pass_object_back(element);
+        });
     }
 
     public connect(port: number, host: string) {

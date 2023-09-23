@@ -1,6 +1,4 @@
 
-
-
 export class SDComUtils {
     public static obj2json2bytes(obj: any): Buffer {
         let json_text: string = "";
@@ -26,9 +24,7 @@ export class SDComUtils {
             json = json.slice(0, j_len - 1);
         }
 
-        SDComUtils.before_parse_info(j_len);
         let obj = JSON.parse(json);
-        SDComUtils.after_parse_info();
         
         return obj;
     }

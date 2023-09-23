@@ -2,11 +2,17 @@ import { FlowOps, NodePosition, RenderData } from "./00_flow_t";
 import { PromptRealatedData } from "./02_serv_t";
 import { promptConfig } from "./03_sd_t";
 
+export enum ImageType {
+    NONE = 'none',
+    TXT2IMG = 'txt2img',
+    IMG2TXT = 'img2txt',
+}
 
 export class PromptReference {
     prompt: promptConfig = new promptConfig();
     prompt_finished: boolean = false;
     prompt_img_id: number = -1;
+    prompt_img_type: ImageType = ImageType.NONE;
 }
 
 export interface NodeData {
